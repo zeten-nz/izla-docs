@@ -283,10 +283,10 @@ implemented there; TD-246 is the separate 2.2A-R Activity-registry decision). Re
      (objective/markdown/media via one registry-driven dispatcher; unsupported not authorable); learner runtime unchanged;
      StaffAudit never stores payload/answerKey; OCC tokens hardened to strictly advance ≥1ms (TIMESTAMP(3)). TD-248;
      unit 423→449, e2e 472→499 (code `e716bd2`).
-   - **2.2A-3 — ✅ DONE on branch** (2026-08-21, code `beb31d5`; no schema): subject-scoped Skill authoring +
+   - **2.2A-3 — ✅ DONE on branch** (2026-08-21, code `b355733`; no schema): subject-scoped Skill authoring +
      LessonSkill/ActivitySkill writers + LessonPrerequisite writer with **transactional full-DAG cycle prevention**
      (whole-Subject graph + Subject-row `FOR UPDATE` serialization; concurrent inverse edges cannot both commit). Writes
-     the existing learner authorities; learner runtime unchanged. TD-249; unit 449→458, e2e 499→519. **Phase 2.2A authoring
+     the existing learner authorities; learner runtime unchanged. TD-249; unit 449→458, e2e 499→520. **Phase 2.2A authoring
      backend is now functionally complete for the text/objective MVP scope.**
 4. **2.2B — Publishing / Revision Workflow**: atomic publish transaction (pointer move + supersede + publishedAt/By),
    publish validation (hard blockers vs warnings), preview, idempotent republish, takedown, centralized learner-visibility gate.

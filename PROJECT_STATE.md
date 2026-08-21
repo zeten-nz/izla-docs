@@ -6,12 +6,12 @@
 ## Repository pointers (verified 2026-08-21)
 | Repo | Role | Branch | HEAD SHA (at verification) | Working tree |
 |---|---|---|---|---|
-| `zeten-nz/izlan` | code / schema / migrations / tests | `phase/2.2A-3` | `beb31d5a113156a5e4c09ab4b4b3a87750cb70f9` (base `main` `d8e6b69`) | clean |
+| `zeten-nz/izlan` | code / schema / migrations / tests | `phase/2.2A-3` | `b355733742b75835caf43e2b36a5e4b6ec7a4a33` (base `main` `d8e6b69`; skill-create authz fix on `beb31d5`) | clean |
 | `zeten-nz/izla-docs` | product/architecture decisions, checkpoints | `phase/2.2A-3` | base `main` `a11b214` | clean |
 
 \* Phase **2.2A-3** (Skill authoring + Skill mapping + prerequisite DAG) implemented on branch `phase/2.2A-3` — izlan base
 `main` @ `d8e6b69` (which merged the 2.2A-2 PR #5); docs base `main` @ `a11b214` (which merged the 2.2A-2 docs, PR #8).
-**Code SHA `beb31d5`** is this phase's implementation; izlan `main` stays `d8e6b69` until the PR merges. The Baseline below
+**Code SHA `b355733`** is this phase's implementation (skill-create authz fix on `beb31d5`); izlan `main` stays `d8e6b69` until the PR merges. The Baseline below
 reflects the `phase/2.2A-3` branch state, OWNER REVIEW PENDING.
 
 > **Governance note:** before the 2026-08-21 workflow adoption, historical phases were committed coarsely to `main` and
@@ -20,7 +20,7 @@ reflects the `phase/2.2A-3` branch state, OWNER REVIEW PENDING.
 
 ## Current position
 - **Last completed:** Phase **2.2A-3** — Skill authoring + Skill mapping + prerequisite DAG. Result: PASS — **complete on
-  branch `phase/2.2A-3` (code `beb31d5`), OWNER REVIEW PENDING (not merged)**. Staff `/api/staff/content` now authors:
+  branch `phase/2.2A-3` (code `b355733`), OWNER REVIEW PENDING (not merged)**. Staff `/api/staff/content` now authors:
   subject-scoped **Skill** (read/create/update; no delete/archive/merge; ACTIVE-only edits; strict-monotonic OCC),
   **LessonSkill** (DRAFT logical Lesson, Lesson.updatedAt token), **ActivitySkill** (DRAFT revision, Revision.updatedAt
   token), and **LessonPrerequisite** with **transactional full-DAG cycle prevention** (whole-Subject graph + Subject-row
@@ -60,13 +60,13 @@ reflects the `phase/2.2A-3` branch state, OWNER REVIEW PENDING.
 - **Workflow:** the two-repo phase/checkpoint/SHA workflow is adopted (rules in `izlan/CLAUDE.md`).
 - **No future phase is marked complete.** No implementation phase starts until the owner supplies its specific prompt.
 
-## Baseline (phase/2.2A-3 @ `beb31d5`; izlan `main` still `d8e6b69` until the PR merges)
+## Baseline (phase/2.2A-3 @ `b355733`; izlan `main` still `d8e6b69` until the PR merges)
 | Metric | Value |
 |---|---|
 | migrations | 22 (last: `20260821110000_content_schema_hardening`; **no new migration in 2.2A-3**) |
 | unit tests | 458 (2.2A-3 +9: prerequisite-graph DAG-01..07 + hasPath + deep-chain) |
-| e2e tests | 519 (2.2A-3 +20: SA3-01..23 + PR-01..09 + DAG-E1/E2/E3 + audit rollback) |
-| total tests | 977 |
+| e2e tests | 520 (2.2A-3 +21: SA3-01..24 + PR-01..09 + DAG-E1/E2/E3 + audit rollback) |
+| total tests | 978 |
 | named CHECK constraints | 46 (unchanged) |
 | drift | clean (empty diff on izlan_dev + izlan_test) |
 
