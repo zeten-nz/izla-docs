@@ -464,6 +464,44 @@ Profile/onboarding foundation ([LEARNER_ONBOARDING_IMPLEMENTATION.md](LEARNER_ON
 - **Scope:** **no Prisma schema/migration change** (existing hierarchy/contentKey/SubjectAssignment/StaffAudit/updatedAt suffice). LessonRevision/Activity/prerequisite/publish authoring are NOT in this slice (2.2A-2 / 2.2A-3).
 - **Status:** ACCEPTED (implemented Phase 2.2A-1)
 
+### TD-248 — Draft Revision & Activity Authoring v1 (ACCEPTED, implemented Phase 2.2A-2)
+- **Revision version authority:** `LessonRevision.version` is **backend-generated, monotonic per Lesson** (`max+1`),
+  never client-supplied; concurrency is the existing `@@unique([lessonId, version])` with a bounded retry around the
+  race (no advisory locks / schema). **Multiple DRAFT revisions per Lesson are NOT prohibited.** A new DRAFT revision may
+  be created under a **DRAFT or PUBLISHED** Lesson (never ARCHIVED); creating one does **not** mutate `Lesson.status`.
+- **Mutability:** only `RevisionStatus.DRAFT` content is mutable. Revision PATCH edits only `title`/`description`
+  (`updatedBy` = actor, server-owned); `version`/`status`/reviewer/publisher/`publishedAt`/`estimatedDurationMin` are not
+  ordinary fields. No review/publish/archive transition endpoints in this phase.
+- **Revision = Activity concurrency aggregate:** every Activity mutation (create/patch/delete/reorder) carries
+  `expectedRevisionUpdatedAt`; in one transaction it resolves + scopes the revision, conditionally claims the DRAFT
+  revision on `updatedAt` (setting `updatedBy` = actor), mutates the Activity, writes StaffAudit, and returns the new
+  revision `updatedAt`. Stale token → 409 before any business write. `Activity.updatedAt` alone is NOT the token.
+- **Activity type/position:** `type` is **not** an ordinary PATCH field (wrong type = delete + recreate); `position`
+  changes **only** through the atomic reorder endpoint (collision-safe two-step rewrite honoring `@@unique([revision,
+  position])`). Manual staff authoring sets `source = HUMAN`, `aiMetadata = null` (server-owned).
+- **Payload contracts (closed v1, registry-driven `payloadContract`):** OBJECTIVE (MINI_QUESTION/PRACTICE/MASTERY_TEST) →
+  `lesson-activity-objective/v1` (the canonical learner parser is reused as the authoring validator; its learner error is
+  adapted to a safe staff error; full payload incl. answerKey stored server-side). TEXT/EXPLANATION/EXAMPLE →
+  `lesson-activity-markdown/v1` = strict `{ schemaVersion, markdown }` (restricted Markdown; **no rawHtml/html field** —
+  storage contract only). IMAGE/AUDIO → `lesson-activity-media/v1` = strict `{ schemaVersion }` marker; **media identity
+  stays relational** (`ActivityMedia → MediaAsset`) — never mediaAssetId/URL/storageKey in the payload; DRAFT VALIDITY ≠
+  PUBLISH READINESS. SPEAKING/WRITING/LISTENING/AI_INTERACTION/VIDEO → NONE_DEFINED = **not authorable v1**. One canonical
+  authoring dispatcher consumes the registry; no ActivityType classification list is duplicated.
+- **Secrets / learner runtime:** staff reads expose the full objective payload (author edits the answer key); the LEARNER
+  runtime is UNCHANGED (still strips answerKey, view-only stays metadata-only). StaffAudit stores only safe metadata
+  (ids, activityType, position, schemaVersion, changed field names) — never payload/markdown/answerKey; payloads are never
+  logged. **No Prisma schema/migration change.**
+- **OCC token precision (2.2A-2 review clarification — applies to TD-247 writers too):** the optimistic-concurrency
+  token is the row's `updatedAt`, stored as PostgreSQL **TIMESTAMP(3)** (millisecond precision). Every content-authoring
+  conditional writer (Subject/Track/Level/Module/Topic/Lesson update + lesson move, and revision update + the revision
+  aggregate `touch`) now **explicitly** sets `updatedAt = max(now, expected + 1ms)` in the SAME conditional `updateMany`
+  (one DB write, inside the existing transaction) so a successful write **strictly advances** the token
+  (`new updatedAt > expected`) even at the same-millisecond boundary or if the wall clock moved backward — closing a
+  theoretical stale-token re-use at TIMESTAMP(3) precision. No version column / lock / extra write. Proven by a
+  deterministic same-millisecond test (freeze `Date.now()` to the stored token's exact ms). This hardens the
+  already-accepted TD-247 concurrency contract; it is not a new decision.
+- **Status:** ACCEPTED (implemented Phase 2.2A-2)
+
 > Bu hujjat D-04'dagi "hali tanlanmagan" ro'yxatini bosqichma-bosqich yopib boradi.
 > Faqat haqiqatan qabul qilingan qarorlar ACCEPTED; product tasdig'ini kutayotganlar bu yerda yozilmaydi ([OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) va [AUTH_ARCHITECTURE.md](AUTH_ARCHITECTURE.md) §23).
 

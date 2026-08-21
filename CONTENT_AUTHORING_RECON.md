@@ -107,8 +107,10 @@ retroactive rewrite.** The owner's §62 policy is already the implemented behavi
     `new Set([...])` are gone); a neutral shared choice-question primitive
     (`src/common/payload/choice-question-payload.ts`) backs BOTH `parseObjectiveActivityPayload` and `parseItemPayload`
     without merging the two domain contracts (`lesson-activity-objective/v1` vs `placement-item/v1` stay distinct).
-    View-only payload shapes remain undefined (payloadContract = NONE_DEFINED). **Write-time/authoring validation is still
-    NOT built — it is the 2.2A authoring backend that will consume this registry.** (TD-246.)
+    View-only payload shapes were undefined at 2.2A-R (payloadContract = NONE_DEFINED). **Post-2.2A-2:** the authoring
+    backend now consumes the registry — payloadContract closed to LESSON_OBJECTIVE_V1 / LESSON_MARKDOWN_V1 / LESSON_MEDIA_V1
+    / NONE_DEFINED, and one canonical dispatcher (`src/content/activity/authoring-payload.ts`) validates write-time payloads
+    (TEXT/EXPLANATION/EXAMPLE → markdown, IMAGE/AUDIO → media marker, unsupported → not authorable). (TD-246 registry; TD-248 authoring.)
 
 ## 7. Skills & prerequisites (§20/§21/§22/§23) 
 - **Skill** is subject-scoped (`SkillStatus ACTIVE/ARCHIVED`), unique by (subject,name) and (subject,code); referenced by
@@ -184,7 +186,7 @@ BLOCKED) is a future service check; text-first English MVP need not block on tra
 ## 12. Gap classification (§74/§80)
 | # | Area | Status |
 |--|--|--|
-| 1 | hierarchy authoring (Subject…Topic) | PASS (schema); Subject/Track/Level/Module/Topic + **logical Lesson** CRUD subset IMPLEMENTED 2.2A-1 (`/api/staff/content`, DRAFT-only, audited); LessonRevision/Activity authoring still SERVICE GAP → 2.2A-2 |
+| 1 | hierarchy authoring (Subject…Topic) | PASS (schema); Subject/Track/Level/Module/Topic + **logical Lesson** CRUD IMPLEMENTED 2.2A-1; **DRAFT LessonRevision + Activity authoring IMPLEMENTED 2.2A-2** (`/api/staff/content`, DRAFT-only, audited, revision-aggregate concurrency); skill/prerequisite writers → 2.2A-3, review/publish → 2.2B |
 | 2 | lesson logical identity | PASS |
 | 3 | revision model | PASS |
 | 4 | revision status enum | PASS (DRAFT/REVIEW/PUBLISHED/ARCHIVED); RESOLVED §13a (no SUPERSEDED/REJECTED enum — supersede→ARCHIVED, reject→DRAFT) |
@@ -195,7 +197,7 @@ BLOCKED) is a future service check; text-first English MVP need not block on tra
 | 9 | publish authority | RESOLVED §13a (content.publish + subject scope; self-publish OK; no ADMIN bypass) + SERVICE GAP |
 | 10 | methodist subject scope | PASS (SubjectAssignment); **enforcement IMPLEMENTED 2.2A-1** (content.author + DB-resolved SubjectAssignment on every child mutation; IDOR-safe not-found; no role-name bypass; TD-247) |
 | 11 | learner draft isolation | SERVICE GAP (PUBLISHED gate re-implemented per read path, not centralized) |
-| 12 | activity payload validation | runtime parsers DE-DUPLICATED via shared primitive (2.2A-R); WRITE-TIME/authoring validation still SERVICE GAP → 2.2A |
+| 12 | activity payload validation | runtime parsers DE-DUPLICATED (2.2A-R); **WRITE-TIME authoring validation IMPLEMENTED 2.2A-2** — one registry-driven dispatcher (objective/markdown/media contracts; unsupported not authorable); TD-248 |
 | 13 | activity type registry | ✅ IMPLEMENTED 2.2A-R (canonical `activity-registry.ts`; set no longer copy-pasted; exhaustiveness-tested) |
 | 14 | ordering (position unique) | PASS; SERVICE GAP (safe reorder endpoint) |
 | 15 | skill lifecycle | PASS (schema); SERVICE GAP; RESOLVED §13a (skill merge DEFERRED; measured skills never hard-deleted) |
@@ -276,8 +278,11 @@ implemented there; TD-246 is the separate 2.2A-R Activity-registry decision). Re
      codes (`content.author`, `content.subject.manage`) + idempotent bootstrap defaults; **SubjectAssignment
      enforcement** (no role-name bypass); **StaffAudit wiring** (same-transaction); **`updatedAt` optimistic-concurrency
      enforcement**; `Lesson.contentKey` writer immutability; DRAFT-only mutation; accepted DRAFT Lesson→Topic move. TD-247.
-   - **2.2A-2 — pending**: draft LessonRevision + Activity authoring + Activity payload contract closure (consuming the
-     2.2A-R registry for write-time validation).
+   - **2.2A-2 — ✅ DONE on branch** (2026-08-21, code `d9d5435`; no schema): draft LessonRevision + Activity authoring
+     (read/create/update/delete/atomic-reorder; DRAFT revision = concurrency aggregate) + closed payload contracts
+     (objective/markdown/media via one registry-driven dispatcher; unsupported not authorable); learner runtime unchanged;
+     StaffAudit never stores payload/answerKey; OCC tokens hardened to strictly advance ≥1ms (TIMESTAMP(3)). TD-248;
+     unit 423→449, e2e 472→499 (code `e716bd2`).
    - **2.2A-3 — pending**: LessonSkill/ActivitySkill writers + prerequisite writer + **full-DAG prerequisite cycle
      prevention** (transactional, building on the 2.2A-D self-loop CHECK).
 4. **2.2B — Publishing / Revision Workflow**: atomic publish transaction (pointer move + supersede + publishedAt/By),
