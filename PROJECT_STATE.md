@@ -64,6 +64,8 @@ is now an implementation step, not a blocker.)
 
 ## Recommended next build step (subject to owner prompt)
 Phase **2.2A-D** — Content Lifecycle / Schema Hardening: prerequisite **self-loop CHECK (DB) + full-DAG cycle validation
-at service/transaction level** (a DB CHECK cannot enforce a multi-node cycle), immutable stable Lesson `contentKey` +
-slug uniqueness, `updatedAt` optimistic-concurrency, and the accepted revision-lifecycle model (`DRAFT→REVIEW→PUBLISHED→
-ARCHIVED`, no SUPERSEDED/REJECTED enum). Decisions are accepted (§13a); **do NOT start without the owner's phase prompt.**
+at service/transaction level** (a DB CHECK cannot enforce a multi-node cycle), an immutable stable Lesson `contentKey`
+(import/business identity; title is not identity — Lesson **slug** stays a separate routing/SEO concern, NOT content
+identity and NOT part of this hardening), `updatedAt` optimistic-concurrency, and the accepted revision-lifecycle model
+(`DRAFT→REVIEW→PUBLISHED→ARCHIVED`, no SUPERSEDED/REJECTED enum). Decisions are accepted (§13a); **do NOT start without
+the owner's phase prompt.**

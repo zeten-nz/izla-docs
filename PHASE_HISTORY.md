@@ -1,10 +1,12 @@
 # Izlan — Phase History (append-only index)
 
-> Chronological index of phases. Full immutable checkpoints (with SHAs) live in [checkpoints/](checkpoints/) **from
-> 2026-08-21 onward**. Everything before that date was committed coarsely to `main` and has **no per-phase SHA** — all
-> historical phases are contained in code `19461eb` / docs `92cadce`. Authoritative per-phase detail for historical
-> phases lives in the `*_IMPLEMENTATION.md` docs and the OPEN_QUESTIONS "HOLATI" blocks (pending migration to
-> checkpoints/). Test counts shown are as reported at each phase; treat counts as informational, not a quality target.
+> Chronological index of phases. **Authority map:** this file = the **concise historical index**; the historical
+> `*_IMPLEMENTATION.md` docs = the **detailed per-phase records**; [checkpoints/](checkpoints/) = **immutable SHA-bearing
+> checkpoints from the new workflow (2026-08-21) onward**; [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) = **unresolved
+> decisions only** (the old per-phase "HOLATI" blocks were removed from OPEN_QUESTIONS on 2026-08-21 — they no longer
+> exist there). Phases before 2026-08-21 were committed coarsely to `main` and have **no per-phase SHA** — all are
+> contained in code `19461eb`. Test counts are as reported at each phase; treat counts as informational, not a quality
+> target.
 
 ## SHA-recorded phases (new workflow, 2026-08-21+)
 | Phase | Title | Result | Mig | Unit | E2E | Code SHA | Docs SHA | Checkpoint |
@@ -37,8 +39,10 @@
 | 2.2A-P | Content authoring/publishing/methodist workflow recon (NO CODE) | 21 | 397 | 432 | — |
 
 ## Notes
-- **Payment provider track PAUSED** after 2.1L-D / 2.1L-C0 (no merchant application / docs / sandbox / credentials).
-- 2.1L-C (real CLICK integration) is UNBLOCKED-pending the CLICK PROTOCOL VERIFICATION BLOCKER (see PROJECT_STATE).
+- **Real-provider implementation track PAUSED** after 2.1L-D / 2.1L-C0 (no merchant application / docs / sandbox /
+  credentials). The completed payment architecture is intact and untouched.
+- The **CLICK PROTOCOL VERIFICATION BLOCKER is NOT closed**; **2.1L-C (real CLICK integration) has not started** and will
+  not begin until the blocker is cleared and the track resumes (see PROJECT_STATE).
 - **2026-08-21 cleanup:** the per-phase "HOLATI" status blocks were **removed from OPEN_QUESTIONS.md** and consolidated
   into this history (the table above is their concise record; full per-phase detail lives in the `*_IMPLEMENTATION.md`
   docs). OPEN_QUESTIONS now holds only genuinely unresolved owner decisions. Accepted content-lifecycle decisions moved
