@@ -38,7 +38,7 @@ schema decisions.
 | Activity | uuid7 | — (revision owns lifecycle) | `position` | source HUMAN/AI_*, aiMetadata | — | (lessonRevisionId,position) | AUTHORING-READY |
 | Skill | uuid7 | `SkillStatus` ACTIVE/ARCHIVED | sortOrder | — | — | (subjectId,name),(subjectId,code) | AUTHORING-READY |
 | LessonSkill / ActivitySkill | uuid7 | — | — | — | — | (lesson,skill)/(activity,skill) | AUTHORING-READY |
-| LessonPrerequisite | uuid7 | — | — | — | — | (lesson,prereq) | self-loop DB CHECK IMPLEMENTED 2.2A-D (`chk_lesson_prerequisite_no_self_loop`); full multi-node DAG (A→B→C→A) prevention = SERVICE GAP → 2.2A-3 |
+| LessonPrerequisite | uuid7 | — | — | — | — | (lesson,prereq) | self-loop DB CHECK IMPLEMENTED 2.2A-D; **full multi-node DAG (A→B→C→A) prevention IMPLEMENTED 2.2A-3** (transactional whole-Subject graph check + Subject-row `FOR UPDATE` serialization; TD-249) |
 | MediaAsset | uuid7 | processing PENDING/READY/FAILED + moderation UNREVIEWED/APPROVED/BLOCKED | — | uploadedBy | — | storageKey unique | AUTHORING-READY (no transcript/captions) |
 | ActivityMedia | uuid7 | — | position | — | — | (activity,asset), asset onDelete Restrict | AUTHORING-READY |
 | SubjectAssignment | uuid7 | — | — | assignedBy? | — | (userId,subjectId) | WIRED 2.2A-1 (scope authority + manage endpoints) |
@@ -200,9 +200,9 @@ BLOCKED) is a future service check; text-first English MVP need not block on tra
 | 12 | activity payload validation | runtime parsers DE-DUPLICATED (2.2A-R); **WRITE-TIME authoring validation IMPLEMENTED 2.2A-2** — one registry-driven dispatcher (objective/markdown/media contracts; unsupported not authorable); TD-248 |
 | 13 | activity type registry | ✅ IMPLEMENTED 2.2A-R (canonical `activity-registry.ts`; set no longer copy-pasted; exhaustiveness-tested) |
 | 14 | ordering (position unique) | PASS; SERVICE GAP (safe reorder endpoint) |
-| 15 | skill lifecycle | PASS (schema); SERVICE GAP; RESOLVED §13a (skill merge DEFERRED; measured skills never hard-deleted) |
-| 16 | skill mapping (lesson+activity) | PASS |
-| 17 | prerequisite DAG | DB self-loop CHECK IMPLEMENTED 2.2A-D (`chk_lesson_prerequisite_no_self_loop`, `lesson_id <> prerequisite_lesson_id`); SERVICE GAP: full multi-node DAG cycle (A→B→C→A) validation → 2.2A (service/transaction-level; a row CHECK cannot detect it) |
+| 15 | skill lifecycle | PASS (schema); **Skill authoring IMPLEMENTED 2.2A-3** (subject-scoped create/update, ACTIVE-only edits, OCC); skill merge + hard-delete + archive lifecycle still DEFERRED (RESOLVED §13a) |
+| 16 | skill mapping (lesson+activity) | PASS; **LessonSkill/ActivitySkill authoring IMPLEMENTED 2.2A-3** (same-subject; DRAFT Lesson / DRAFT revision aggregate tokens; TD-249) |
+| 17 | prerequisite DAG | DB self-loop CHECK IMPLEMENTED 2.2A-D; **full multi-node DAG cycle prevention IMPLEMENTED 2.2A-3** (transactional whole-Subject graph check + Subject-row `FOR UPDATE`; concurrent inverse edges cannot both commit; TD-249) |
 | 18 | roadmap version behavior | PASS |
 | 19 | daily-plan version behavior | PASS |
 | 20 | learning-session revision freeze | PASS (pin on progress/attempt) |
@@ -283,8 +283,11 @@ implemented there; TD-246 is the separate 2.2A-R Activity-registry decision). Re
      (objective/markdown/media via one registry-driven dispatcher; unsupported not authorable); learner runtime unchanged;
      StaffAudit never stores payload/answerKey; OCC tokens hardened to strictly advance ≥1ms (TIMESTAMP(3)). TD-248;
      unit 423→449, e2e 472→499 (code `e716bd2`).
-   - **2.2A-3 — pending**: LessonSkill/ActivitySkill writers + prerequisite writer + **full-DAG prerequisite cycle
-     prevention** (transactional, building on the 2.2A-D self-loop CHECK).
+   - **2.2A-3 — ✅ DONE on branch** (2026-08-21, code `beb31d5`; no schema): subject-scoped Skill authoring +
+     LessonSkill/ActivitySkill writers + LessonPrerequisite writer with **transactional full-DAG cycle prevention**
+     (whole-Subject graph + Subject-row `FOR UPDATE` serialization; concurrent inverse edges cannot both commit). Writes
+     the existing learner authorities; learner runtime unchanged. TD-249; unit 449→458, e2e 499→519. **Phase 2.2A authoring
+     backend is now functionally complete for the text/objective MVP scope.**
 4. **2.2B — Publishing / Revision Workflow**: atomic publish transaction (pointer move + supersede + publishedAt/By),
    publish validation (hard blockers vs warnings), preview, idempotent republish, takedown, centralized learner-visibility gate.
 5. **2.2C — Methodist CMS** (frontend, out of backend scope here).

@@ -502,6 +502,33 @@ Profile/onboarding foundation ([LEARNER_ONBOARDING_IMPLEMENTATION.md](LEARNER_ON
   already-accepted TD-247 concurrency contract; it is not a new decision.
 - **Status:** ACCEPTED (implemented Phase 2.2A-2)
 
+### TD-249 — Skill Mapping & Prerequisite DAG Authoring v1 (ACCEPTED, implemented Phase 2.2A-3)
+- **Skill:** Subject-scoped (`Skill.subjectId`); authored via content.author + SubjectAssignment. **No hard delete /
+  merge / archive lifecycle** in this phase; new Skills are ACTIVE; only ACTIVE skills are metadata-editable (ARCHIVED →
+  safe 409). Skill PATCH uses strict-monotonic `updatedAt` OCC; `subjectId`/`status` immutable (no cross-Subject move).
+  Duplicate `(subjectId,name)`/`(subjectId,code)` → safe 409.
+- **Aggregate concurrency tokens:** LessonSkill + LessonPrerequisite mutations use **`Lesson.updatedAt`** (DRAFT logical
+  Lesson only); ActivitySkill mutations use **`LessonRevision.updatedAt`** (DRAFT revision only), NOT `Activity.updatedAt`.
+  Idempotent add/remove with a CURRENT token is a no-op (no token advance, no audit); a STALE token is 409 even when the
+  requested final state already exists. All strict-monotonic (TD-247/248 hardening).
+- **Same-Subject mapping invariant:** the Skill's Subject must equal the Lesson/Activity's Subject; cross-subject targets
+  resolve to `CONTENT_NOT_FOUND` (IDOR-safe). Only ACTIVE skills may be newly assigned.
+- **Lifecycle gates (protect live learner authorities before publishing exists):** LessonSkill mutates only a DRAFT
+  logical Lesson; ActivitySkill only a DRAFT LessonRevision; prerequisite mutates only a DRAFT source Lesson. These write
+  the EXISTING learner authorities (roadmap `LessonSkill`/`LessonPrerequisite`, review-session `ActivitySkill`) — no shadow
+  tables, no learner-runtime change, no historical roadmap snapshot rewrite.
+- **Prerequisites are same-Subject** (both Lessons resolved from DB; Subjects must match); DRAFT source, DRAFT-or-PUBLISHED
+  target (ARCHIVED target rejected). Direct self-loop rejected at the service layer (the `chk_lesson_prerequisite_no_self_loop`
+  DB CHECK remains defense-in-depth — it does NOT detect multi-node cycles).
+- **Transactional full-DAG cycle prevention:** before adding `A → B` there must be no existing path `B → … → A`; the check
+  uses the **WHOLE Subject graph** (all edges whose source Lesson is in the Subject), via an iterative (non-recursive) path
+  search. Graph mutations for a Subject are **serialized by locking the Subject row (`SELECT … FOR UPDATE`)** inside the
+  transaction before reading the graph + validating + writing — so two concurrent inverse-edge writers cannot both commit a
+  cycle. ADD and REMOVE both acquire the same Subject lock. No app-mutex / Redis / advisory-lock / lock-table.
+- **Atomicity:** actual relation write + aggregate `touch` + StaffAudit are ONE transaction (audit failure rolls all back);
+  cycle rejection / no-op / stale writes touch nothing and audit nothing. **No Prisma schema/migration change.**
+- **Status:** ACCEPTED (implemented Phase 2.2A-3)
+
 > Bu hujjat D-04'dagi "hali tanlanmagan" ro'yxatini bosqichma-bosqich yopib boradi.
 > Faqat haqiqatan qabul qilingan qarorlar ACCEPTED; product tasdig'ini kutayotganlar bu yerda yozilmaydi ([OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) va [AUTH_ARCHITECTURE.md](AUTH_ARCHITECTURE.md) §23).
 

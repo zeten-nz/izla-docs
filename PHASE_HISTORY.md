@@ -16,6 +16,7 @@
 | 2.2A-R | Canonical Activity registry + shared payload validation (behavior-preserving refactor; no schema) | PASS | 22 | 417 | 436 | `bd83c99` | `phase/2.2A-R` (SHA in checkpoint/PR) | [2.2A-R.md](checkpoints/2.2A-R.md) |
 | 2.2A-1 | Content authoring backend Part 1 — authz + subject scope + hierarchy + logical Lesson (no schema; +owner-review hardening) | PASS | 22 | 423 | 472 | `abea1c4` | `phase/2.2A-1` (SHA in checkpoint/PR) | [2.2A-1.md](checkpoints/2.2A-1.md) |
 | 2.2A-2 | Draft LessonRevision + Activity authoring + payload contract closure (objective/markdown/media; no schema; +OCC token hardening) | PASS | 22 | 449 | 499 | `e716bd2` | `phase/2.2A-2` (SHA in checkpoint/PR) | [2.2A-2.md](checkpoints/2.2A-2.md) |
+| 2.2A-3 | Skill + LessonSkill + ActivitySkill + prerequisite DAG authoring (Subject-lock cycle prevention; no schema) | PASS | 22 | 458 | 519 | `beb31d5` | `phase/2.2A-3` (SHA in checkpoint/PR) | [2.2A-3.md](checkpoints/2.2A-3.md) |
 | _next_ | (awaiting owner phase prompt) | — | — | — | — | — | — | — |
 
 ## Historical phases (pre-per-phase-SHA — all in code `19461eb`, docs `92cadce`)
@@ -65,6 +66,15 @@
   decisions formalized as **TD-240..245**. Content authoring application layer still NOT STARTED (next: 2.2A-R).
   **Phase 2.2A-D (content schema hardening) can proceed independently of Telegram.** *(2.2A-D merged to `main`:
   izlan `2e1c9e32`, izla-docs `fecbfad9`.)*
+- **Phase 2.2A-3 COMPLETE on branch** (2026-08-21, code `beb31d5`): Skill authoring + Skill mapping + prerequisite DAG —
+  `/api/staff/content` subject-scoped Skill (no delete/archive/merge; ACTIVE-only edits; strict OCC), LessonSkill (DRAFT
+  logical Lesson, Lesson.updatedAt token), ActivitySkill (DRAFT revision, Revision.updatedAt token), LessonPrerequisite
+  with **transactional full-DAG cycle prevention** (whole-Subject graph + Subject-row `FOR UPDATE` serialization so
+  concurrent inverse edges cannot both commit; DB self-loop CHECK stays defense-in-depth). Same-Subject invariant
+  (cross-subject → IDOR-safe 404); one-transaction touch+audit; **learner runtime UNCHANGED** (writes existing roadmap/review
+  authorities; roadmap+review e2e green). No schema/migration (migrations 22, CHECK 46); unit 449→458, e2e 499→519.
+  **TD-249**. **Phase 2.2A authoring backend now FUNCTIONALLY COMPLETE for the text/objective MVP scope.** Next: 2.2B
+  review/publishing. *(2.2A-2 merged to `main`: izlan `d8e6b69`, izla-docs `a11b214`.)*
 - **Phase 2.2A-2 COMPLETE on branch** (2026-08-21, code `e716bd2`; OCC token hardening on `d9d5435`): draft LessonRevision + Activity authoring —
   `/api/staff/content` revision read/create/update (backend version max+1, bounded-retry; DRAFT-only mutable; parent Lesson
   DRAFT-or-PUBLISHED) + Activity read/create/update/delete/atomic-reorder with the DRAFT revision as concurrency aggregate
