@@ -43,7 +43,8 @@ izlan base `main` @ `2e1c9e32` (which merged the 2.2A-D content-schema-hardening
   (AssessmentItem stays a separate versioned contract). Behavior-preserving; no schema/migration. **Content authoring
   application layer is still NOT STARTED** (no CMS / authoring backend / permissions / publish workflow / write-time
   validation / full-DAG cycle service / bulk import). Accepted content-lifecycle decisions are formalized as
-  **TD-240..246** ([CONTENT_AUTHORING_RECON.md](CONTENT_AUTHORING_RECON.md) §13a). Content track is independent of Telegram.
+  **TD-240..245** ([CONTENT_AUTHORING_RECON.md](CONTENT_AUTHORING_RECON.md) §13a); **TD-246** separately formalizes the
+  2.2A-R Canonical Activity Registry decision. Content track is independent of Telegram.
 - **Payment provider track:** **PAUSED** (no CLICK/Payme merchant application, merchant docs, sandbox, or test
   credentials). Completed payment architecture is intact and must not be modified. (Telegram Stars is a *future*
   PaymentProvider behind the existing boundary — it does not resume the CLICK/Payme track.)

@@ -112,9 +112,10 @@ retroactive rewrite.** The owner's §62 policy is already the implemented behavi
 - **Skill mapping exists at BOTH levels:** `LessonSkill` and `ActivitySkill`. A new revision can change activity skills;
   because `SkillMeasurement` carries only `skillId` (+ lesson/session provenance, not activity/revision), historical
   evidence stays semantically stable and is not invalidated by a new revision.
-- **Prerequisites are Lesson-level** (`LessonPrerequisite`, unique (lesson,prereq)). **Cycle prevention is unimplemented:
-  the init migration has only the unique index — no self-reference CHECK and no cycle guard**; the `content.prisma:273`
-  "app + CHECK" note is aspirational and, per the owner correction (2026-08-21), **imprecise**. A DB row-level CHECK can
+- **Prerequisites are Lesson-level** (`LessonPrerequisite`, unique (lesson,prereq)). **At recon time, cycle prevention was
+  unimplemented: the init migration had only the unique pair/index, with no self-reference CHECK and no full cycle guard**;
+  the `content.prisma:273` "app + CHECK" note was aspirational and, per the owner correction (2026-08-21), **imprecise**.
+  A DB row-level CHECK can
   enforce **only the self-loop** (`lesson_id <> prerequisite_lesson_id`) — it **cannot** detect a multi-node DAG cycle.
   **Full DAG cycle prevention belongs to service/transaction validation** at write/publish time, not a DB CHECK. →
   self-loop CHECK IMPLEMENTED 2.2A-D (`chk_lesson_prerequisite_no_self_loop`); SERVICE (full multi-node DAG cycle
