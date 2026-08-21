@@ -6,8 +6,8 @@
 ## Repository pointers (verified 2026-08-21)
 | Repo | Role | Branch | HEAD SHA (at verification) | Working tree |
 |---|---|---|---|---|
-| `zeten-nz/izlan` | code / schema / migrations / tests | `phase/2.2B` | `4c7ce7a979fd1658f19edb0dac7f395ca17f219d` (base `main` `9ebd90a`) | clean |
-| `zeten-nz/izla-docs` | product/architecture decisions, checkpoints | `phase/2.2B` | base `main` `4b8b89f` | clean |
+| `zeten-nz/izlan` | code / schema / migrations / tests + `web/` | `phase/2.2C` | `a519344996a91177d5d10a3333dd3942b6b00232` (base `main` `14a6d5c`) | clean |
+| `zeten-nz/izla-docs` | product/architecture decisions, checkpoints | `phase/2.2C` | `phase/2.2C` (final SHA in PR) | clean |
 
 \* Phase **2.2B** (review + publishing + preview + readiness + learner visibility) implemented on branch `phase/2.2B` —
 izlan base `main` @ `9ebd90a` (which merged the 2.2A-3 PR #6); docs base `main` @ `4b8b89f` (which merged the 2.2A-3 docs,
@@ -19,22 +19,25 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
 > (historical authority). Per-phase branch/SHA recording begins with the adopted workflow.
 
 ## Current position
-- **Last completed:** Phase **2.2B** — Review + Publishing + Preview + Readiness + Learner Visibility. Result: PASS —
-  **complete on branch `phase/2.2B` (code `4c7ce7a`), OWNER REVIEW PENDING (not merged)**. `content.publish` + MVP
-  self-publish; explicit top-down hierarchy publication; revision `DRAFT→REVIEW→PUBLISHED→ARCHIVED` (+ REVIEW→DRAFT return
-  with audited reason); **atomic publication** serialized on the Lesson row (`FOR UPDATE`) — old current revision
-  ARCHIVED, new PUBLISHED (reviewedBy/publishedBy/publishedAt + duration cache), `Lesson.publishedRevisionId` moved, one
-  transaction with audit; **idempotent republish**; concurrent inverse publishes cannot both win. Canonical
-  publish-readiness (parent/prerequisite/prerequisite-subject/skill/media blockers + warnings, no secret leak); learner-safe
-  preview + **ONE shared learner projector** (objective answerKey stripped; TEXT/EXPLANATION/EXAMPLE Markdown; media
-  metadata-only); **ONE centralized visibility authority** (full Subject→Topic + pointer coherence) reconciling roadmap +
-  LessonExecution; urgent Lesson takedown removes access at **every** learner execution + review surface (attempt /
-  view-only / completion / review-session, via the canonical `resumableLessonWhere`) without deleting history. A
-  **final blocker correction** on the same branch closed three safety gaps: takedown execution-access gating,
-  idempotent-republish-after-takedown (now a lifecycle conflict, no silent restore), and same-subject prerequisite
-  revalidation (`PREREQUISITE_SUBJECT_MISMATCH`). No schema/migration. TD-250 added (clarified). See
-  [checkpoints/2.2B.md](checkpoints/2.2B.md). (Prior: 2.2A-3 skills/prerequisites — [checkpoints/2.2A-3.md](checkpoints/2.2A-3.md);
-  2.2A-2 revision/activity — [checkpoints/2.2A-2.md](checkpoints/2.2A-2.md); 2.2A-1 authz/hierarchy — [checkpoints/2.2A-1.md](checkpoints/2.2A-1.md).)
+- **Last completed:** Phase **2.2C** — Methodist CMS Web Application. Result: PASS — **complete on branch `phase/2.2C`
+  (code `a519344`), OWNER REVIEW PENDING (not merged)**. The **first Izlan web app** lives at **`izlan/web`** (Next.js
+  App Router + TypeScript + React + Tailwind), a professional Methodist/Admin content CMS consuming the 2.2A/2.2B staff
+  APIs: subject/hierarchy/lesson/revision/activity/skill/prerequisite authoring, readiness, learner preview, and the
+  review→publish→takedown workflow. **Auth:** access token **memory-only**, HttpOnly rotating refresh cookie, **single-flight
+  refresh** (one refresh for concurrent 401s, retry-once, no loop), no 409/OCC auto-retry. **Authorization:** a narrow
+  **`GET /api/staff/content/session`** returns capability booleans (`author`/`publish`/`subjectManage`) from effective
+  permission codes — **no role-name hard-coding**; the backend stays the final authority (SubjectAssignment scope per
+  mutation). **OCC:** one centralized `Revision.updatedAt` authority + per-aggregate tokens; conflicts surface a banner,
+  never a silent retry. **Content safety:** canonical markdown/objective serializers; learner preview via an allowlist safe
+  view model (never `answerKey`/`correctOptionIds`/`storageKey`); Markdown raw HTML disabled. **Only backend change** = the
+  capability endpoint + tests; **no schema/migration**. TD-251 added. See [checkpoints/2.2C.md](checkpoints/2.2C.md) and the
+  living [METHODIST_CMS.md](METHODIST_CMS.md). ActivityMedia upload, bulk import (→ 2.2D), and the learner web app (→ 3.x)
+  are NOT built.
+- **Prior:** Phase **2.2B** — Review + Publishing + Preview + Readiness + Learner Visibility (PASS; `content.publish` +
+  self-publish, top-down hierarchy publish, atomic Lesson-serialized publication + pointer switch, idempotent republish,
+  canonical readiness, centralized visibility, urgent takedown gating every learner surface, `PREREQUISITE_SUBJECT_MISMATCH`).
+  See [checkpoints/2.2B.md](checkpoints/2.2B.md). (Earlier: 2.2A-3 [checkpoints/2.2A-3.md](checkpoints/2.2A-3.md); 2.2A-2
+  [checkpoints/2.2A-2.md](checkpoints/2.2A-2.md); 2.2A-1 [checkpoints/2.2A-1.md](checkpoints/2.2A-1.md).)
 - **Telegram integration:** **architecture CANDIDATE — NOT STARTED**, not approved for implementation. Recon found the
   codebase is already identity-agnostic under the phone layer; a generic `UserIdentity` + nullable phone (Option B) is
   recommended — but there is a **cross-surface identity verification gate** (a technical external-contract fact, **NOT an
@@ -52,27 +55,32 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
   (2.2B): `content.publish` + self-publish, top-down hierarchy publish, `DRAFT→REVIEW→PUBLISHED→ARCHIVED`, atomic
   Lesson-serialized publication + pointer switch, idempotent republish, canonical publish-readiness, learner-safe preview,
   centralized learner visibility, Markdown learner projection, urgent takedown. A text/objective Lesson is genuinely
-  publishable + learner-executable end-to-end. **Still NOT built:** Methodist CMS frontend (→ 2.2C); ActivityMedia
-  management/upload/delivery (deferred — media identity relational, readiness enforced but no storage); bulk import
-  (→ 2.2D); English A1 pilot content (→ 2.2E). Accepted content-lifecycle decisions are formalized as
+  publishable + learner-executable end-to-end. The **Methodist CMS frontend is now built (2.2C, `izlan/web`)** and drives
+  this whole flow from a browser. **Still NOT built:** ActivityMedia management/upload/delivery (deferred — media identity
+  relational, readiness enforced but no storage); bulk import (→ 2.2D); English A1 pilot content (→ 2.2E); learner web app
+  (→ 3.x). Accepted content-lifecycle decisions are formalized as
   **TD-240..245** ([CONTENT_AUTHORING_RECON.md](CONTENT_AUTHORING_RECON.md) §13a); **TD-246** the 2.2A-R registry;
   **TD-247** 2.2A-1 authz/concurrency; **TD-248** 2.2A-2 draft revision/activity; **TD-249** 2.2A-3 skill mapping &
-  prerequisite DAG; **TD-250** the 2.2B review/publication/visibility decision. Content track is independent of Telegram.
+  prerequisite DAG; **TD-250** the 2.2B review/publication/visibility decision; **TD-251** the 2.2C Methodist CMS web
+  architecture (`izlan/web`, memory-only token, single-flight refresh, capability endpoint, OCC save model, safe preview).
+  Content track is independent of Telegram.
 - **Payment provider track:** **PAUSED** (no CLICK/Payme merchant application, merchant docs, sandbox, or test
   credentials). Completed payment architecture is intact and must not be modified. (Telegram Stars is a *future*
   PaymentProvider behind the existing boundary — it does not resume the CLICK/Payme track.)
 - **Workflow:** the two-repo phase/checkpoint/SHA workflow is adopted (rules in `izlan/CLAUDE.md`).
 - **No future phase is marked complete.** No implementation phase starts until the owner supplies its specific prompt.
 
-## Baseline (phase/2.2B @ `4c7ce7a`; izlan `main` still `9ebd90a` until the PR merges)
+## Baseline (phase/2.2C @ `a519344`; izlan `main` `14a6d5c` until the PR merges)
 | Metric | Value |
 |---|---|
-| migrations | 22 (last: `20260821110000_content_schema_hardening`; **no new migration in 2.2B**) |
-| unit tests | 474 (2.2B +16: visibility VIS-01..08, learner projection, registry AR-09) |
-| e2e tests | 542 (2.2B +22: PB/RW/PUB/RD/MR/PV/VIS + concurrent publish + audit rollback + takedown; blocker correction +4: TD-01..07 execution takedown, RS-TD-01..03 review-session takedown, REP-TD-01 republish-after-takedown, PREREQ-SUBJECT cross-subject) |
-| total tests | 1012 |
+| migrations | 22 (last: `20260821110000_content_schema_hardening`; **no new migration in 2.2B or 2.2C**) |
+| backend unit tests | 474 (unchanged in 2.2C) |
+| backend e2e tests | 547 (2.2C +5: CMS-SESSION-01..05 capability endpoint) |
+| backend total tests | **1021** (474 + 547) |
+| web tests (Vitest) | 22 (WEB-01..14 across auth/single-flight/OCC/serializers/preview/workflow) |
 | named CHECK constraints | 46 (unchanged) |
 | drift | clean (empty diff on izlan_dev + izlan_test) |
+| web app | `izlan/web` — Next.js 15.5.23 · typecheck/lint clean · `next build` ok · `npm ci` reproduces |
 
 ## What is implemented (high level)
 - **Auth & users** (1.1–1.4C): phone+OTP, RS256 access JWT, refresh-cookie rotation, RBAC (permission-code, no ADMIN

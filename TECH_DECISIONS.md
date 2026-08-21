@@ -583,6 +583,36 @@ Profile/onboarding foundation ([LEARNER_ONBOARDING_IMPLEMENTATION.md](LEARNER_ON
   publication/takedown safety gaps found in owner review. Still no schema/migration.
 - **Status:** ACCEPTED (implemented Phase 2.2B)
 
+### TD-251 — Methodist CMS Web Architecture v1 (ACCEPTED, implemented Phase 2.2C)
+- **Frontend location:** the first Izlan web app lives INSIDE the runtime repo at `izlan/web` (NOT a third repository) —
+  one runtime repo so backend + web version together; independent deploy artifacts remain possible later. Stack:
+  **Next.js App Router + TypeScript + React + Tailwind CSS**, CSS-variable design tokens (light/dark, default = system),
+  responsive desktop-first CMS. Pinned dependency versions + committed `web/package-lock.json`.
+- **Auth (unchanged backend contract):** the access token is **memory-only** — never in localStorage / sessionStorage /
+  IndexedDB / cookie / URL / any persisted store; a reload deliberately loses it. The refresh token is a browser-managed
+  **HttpOnly rotating cookie** (`izlan_refresh`, path `/api/auth/refresh`); refresh uses `credentials: include` + the
+  `X-Izlan-CSRF: 1` header. Bootstrap after reload = ONE `/auth/refresh` → `/auth/me` before deciding authenticated vs not.
+- **Single-flight refresh (load-bearing):** ONE API/auth client authority; concurrent 401s share ONE refresh promise;
+  each original request retries **at most once** after a successful refresh; a failed refresh does not loop. No
+  state-changing mutation is ever auto-retried on a 409/OCC conflict.
+- **Authorization:** the frontend NEVER hard-codes role names. A narrow backend endpoint **`GET /api/staff/content/session`**
+  (requires `content.author`) returns only CMS-safe capability booleans `{ author, publish, subjectManage }` derived from
+  effective permission codes (no role names, PII, unrelated permissions, or raw UserRole rows). Capabilities drive UX
+  visibility ONLY — the **backend remains the final authorization authority** (SubjectAssignment scope re-checked in every
+  mutation transaction). This is the ONLY backend change in 2.2C (controller + module wiring + tests; no schema/migration).
+- **OCC save model:** explicit Save (no uncontrolled autosave); each mutation sends the exact last-read aggregate token —
+  entity `updatedAt`, `Lesson.updatedAt` (LessonSkill/prerequisite), `Revision.updatedAt` (activity/ActivitySkill), publish
+  sends both revision + fresh Lesson tokens. **ONE `Revision.updatedAt` authority** is centralized in a revision-editor
+  context so no child caches a stale token. A `CONTENT_EDIT_CONFLICT` surfaces a visible conflict banner (reload latest /
+  cancel), never a silent retry.
+- **Content authoring:** Markdown (`lesson-activity-markdown/v1`) and objective (`lesson-activity-objective/v1`) payloads
+  are serialized by the frontend to the canonical backend contract (serializer tests prove it). The **learner preview** is
+  rendered through an explicit **allowlist safe view model** — it never reads/renders `answerKey`/`correctOptionIds`/
+  `storageKey` and never stringifies the raw payload. Markdown is rendered with **raw HTML disabled** (react-markdown, no
+  `rehype-raw`, no `dangerouslySetInnerHTML`). Unsupported ActivityTypes are not creatable; **ActivityMedia authoring is
+  deferred** (metadata display only — no fake upload). No learner web app in this phase (only the staff learner-preview).
+- **Status:** ACCEPTED (implemented Phase 2.2C)
+
 > Bu hujjat D-04'dagi "hali tanlanmagan" ro'yxatini bosqichma-bosqich yopib boradi.
 > Faqat haqiqatan qabul qilingan qarorlar ACCEPTED; product tasdig'ini kutayotganlar bu yerda yozilmaydi ([OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) va [AUTH_ARCHITECTURE.md](AUTH_ARCHITECTURE.md) §23).
 
