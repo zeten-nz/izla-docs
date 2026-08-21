@@ -6,30 +6,35 @@
 ## Repository pointers (verified 2026-08-21)
 | Repo | Role | Branch | HEAD SHA (at verification) | Working tree |
 |---|---|---|---|---|
-| `zeten-nz/izlan` | code / schema / migrations / tests | `phase/2.2A-3` | `b355733742b75835caf43e2b36a5e4b6ec7a4a33` (base `main` `d8e6b69`; skill-create authz fix on `beb31d5`) | clean |
-| `zeten-nz/izla-docs` | product/architecture decisions, checkpoints | `phase/2.2A-3` | base `main` `a11b214` | clean |
+| `zeten-nz/izlan` | code / schema / migrations / tests | `phase/2.2B` | `4c7ce7a979fd1658f19edb0dac7f395ca17f219d` (base `main` `9ebd90a`) | clean |
+| `zeten-nz/izla-docs` | product/architecture decisions, checkpoints | `phase/2.2B` | base `main` `4b8b89f` | clean |
 
-\* Phase **2.2A-3** (Skill authoring + Skill mapping + prerequisite DAG) implemented on branch `phase/2.2A-3` — izlan base
-`main` @ `d8e6b69` (which merged the 2.2A-2 PR #5); docs base `main` @ `a11b214` (which merged the 2.2A-2 docs, PR #8).
-**Code SHA `b355733`** is this phase's implementation (skill-create authz fix on `beb31d5`); izlan `main` stays `d8e6b69` until the PR merges. The Baseline below
-reflects the `phase/2.2A-3` branch state, OWNER REVIEW PENDING.
+\* Phase **2.2B** (review + publishing + preview + readiness + learner visibility) implemented on branch `phase/2.2B` —
+izlan base `main` @ `9ebd90a` (which merged the 2.2A-3 PR #6); docs base `main` @ `4b8b89f` (which merged the 2.2A-3 docs,
+PR #9). **Code SHA `85ddb10`** is this phase's implementation; izlan `main` stays `9ebd90a` until the PR merges. The
+Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
 
 > **Governance note:** before the 2026-08-21 workflow adoption, historical phases were committed coarsely to `main` and
 > do **not** have per-phase SHAs or phase branches — they are all contained in code `19461eb` / docs `92cadce`
 > (historical authority). Per-phase branch/SHA recording begins with the adopted workflow.
 
 ## Current position
-- **Last completed:** Phase **2.2A-3** — Skill authoring + Skill mapping + prerequisite DAG. Result: PASS — **complete on
-  branch `phase/2.2A-3` (code `b355733`), OWNER REVIEW PENDING (not merged)**. Staff `/api/staff/content` now authors:
-  subject-scoped **Skill** (read/create/update; no delete/archive/merge; ACTIVE-only edits; strict-monotonic OCC),
-  **LessonSkill** (DRAFT logical Lesson, Lesson.updatedAt token), **ActivitySkill** (DRAFT revision, Revision.updatedAt
-  token), and **LessonPrerequisite** with **transactional full-DAG cycle prevention** (whole-Subject graph + Subject-row
-  `SELECT … FOR UPDATE` serialization so concurrent inverse edges cannot both commit; DB self-loop CHECK stays
-  defense-in-depth). Same-Subject invariant everywhere (cross-subject → IDOR-safe 404); every mutation touches its
-  aggregate + audits in one transaction; these write the EXISTING learner authorities with **no learner-runtime change**
-  (roadmap/review-session suites green). No schema/migration. TD-249 added. See [checkpoints/2.2A-3.md](checkpoints/2.2A-3.md).
-  (Prior: 2.2A-2 revision/activity — [checkpoints/2.2A-2.md](checkpoints/2.2A-2.md); 2.2A-1 authz/hierarchy —
-  [checkpoints/2.2A-1.md](checkpoints/2.2A-1.md); 2.2A-R registry — [checkpoints/2.2A-R.md](checkpoints/2.2A-R.md).)
+- **Last completed:** Phase **2.2B** — Review + Publishing + Preview + Readiness + Learner Visibility. Result: PASS —
+  **complete on branch `phase/2.2B` (code `4c7ce7a`), OWNER REVIEW PENDING (not merged)**. `content.publish` + MVP
+  self-publish; explicit top-down hierarchy publication; revision `DRAFT→REVIEW→PUBLISHED→ARCHIVED` (+ REVIEW→DRAFT return
+  with audited reason); **atomic publication** serialized on the Lesson row (`FOR UPDATE`) — old current revision
+  ARCHIVED, new PUBLISHED (reviewedBy/publishedBy/publishedAt + duration cache), `Lesson.publishedRevisionId` moved, one
+  transaction with audit; **idempotent republish**; concurrent inverse publishes cannot both win. Canonical
+  publish-readiness (parent/prerequisite/prerequisite-subject/skill/media blockers + warnings, no secret leak); learner-safe
+  preview + **ONE shared learner projector** (objective answerKey stripped; TEXT/EXPLANATION/EXAMPLE Markdown; media
+  metadata-only); **ONE centralized visibility authority** (full Subject→Topic + pointer coherence) reconciling roadmap +
+  LessonExecution; urgent Lesson takedown removes access at **every** learner execution + review surface (attempt /
+  view-only / completion / review-session, via the canonical `resumableLessonWhere`) without deleting history. A
+  **final blocker correction** on the same branch closed three safety gaps: takedown execution-access gating,
+  idempotent-republish-after-takedown (now a lifecycle conflict, no silent restore), and same-subject prerequisite
+  revalidation (`PREREQUISITE_SUBJECT_MISMATCH`). No schema/migration. TD-250 added (clarified). See
+  [checkpoints/2.2B.md](checkpoints/2.2B.md). (Prior: 2.2A-3 skills/prerequisites — [checkpoints/2.2A-3.md](checkpoints/2.2A-3.md);
+  2.2A-2 revision/activity — [checkpoints/2.2A-2.md](checkpoints/2.2A-2.md); 2.2A-1 authz/hierarchy — [checkpoints/2.2A-1.md](checkpoints/2.2A-1.md).)
 - **Telegram integration:** **architecture CANDIDATE — NOT STARTED**, not approved for implementation. Recon found the
   codebase is already identity-agnostic under the phone layer; a generic `UserIdentity` + nullable phone (Option B) is
   recommended — but there is a **cross-surface identity verification gate** (a technical external-contract fact, **NOT an
@@ -42,31 +47,30 @@ reflects the `phase/2.2A-3` branch state, OWNER REVIEW PENDING.
 - **Canonical Activity registry: DONE** (2.2A-R) — one exhaustive source of truth for Lesson `ActivityType` runtime
   capability classification + one Lesson objective payload authority + a neutral shared choice-question primitive
   (AssessmentItem stays a separate versioned contract). Behavior-preserving; no schema/migration.
-- **Content authoring backend: Phase 2.2A FUNCTIONALLY COMPLETE for the text/objective MVP scope** (2.2A-1 + 2.2A-2 +
-  2.2A-3) — authorization + subject scope + hierarchy + logical Lesson (2.2A-1); DRAFT LessonRevision + Activity + closed
-  objective/markdown/media payload contracts (2.2A-2); Skill + LessonSkill + ActivitySkill + LessonPrerequisite with
-  transactional full-DAG cycle prevention (2.2A-3). SubjectAssignment enforcement, StaffAudit same-transaction wiring, and
-  strict-monotonic aggregate optimistic concurrency throughout; learner runtime unchanged (writes the existing
-  roadmap/review authorities). **Still NOT built:** review/publish/preview + publish-readiness incl. required media for
-  IMAGE/AUDIO (→ 2.2B); ActivityMedia management (deferred); CMS (→ 2.2C); bulk import (→ 2.2D); pilot content (→ 2.2E).
-  Accepted content-lifecycle decisions are formalized as
-  **TD-240..245** ([CONTENT_AUTHORING_RECON.md](CONTENT_AUTHORING_RECON.md) §13a); **TD-246** formalizes the 2.2A-R
-  Canonical Activity Registry decision; **TD-247** the 2.2A-1 content-authoring authorization & concurrency decision;
-  **TD-248** the 2.2A-2 draft revision & activity authoring decision; **TD-249** the 2.2A-3 skill mapping & prerequisite
-  DAG decision. Content track is independent of Telegram.
+- **Content authoring + publication backend: END-TO-END COMPLETE for the text/objective MVP scope** (2.2A-1..3 + 2.2B) —
+  authoring (hierarchy + Lesson + revision + activity + skill + prerequisite DAG, 2.2A) PLUS the **publication workflow**
+  (2.2B): `content.publish` + self-publish, top-down hierarchy publish, `DRAFT→REVIEW→PUBLISHED→ARCHIVED`, atomic
+  Lesson-serialized publication + pointer switch, idempotent republish, canonical publish-readiness, learner-safe preview,
+  centralized learner visibility, Markdown learner projection, urgent takedown. A text/objective Lesson is genuinely
+  publishable + learner-executable end-to-end. **Still NOT built:** Methodist CMS frontend (→ 2.2C); ActivityMedia
+  management/upload/delivery (deferred — media identity relational, readiness enforced but no storage); bulk import
+  (→ 2.2D); English A1 pilot content (→ 2.2E). Accepted content-lifecycle decisions are formalized as
+  **TD-240..245** ([CONTENT_AUTHORING_RECON.md](CONTENT_AUTHORING_RECON.md) §13a); **TD-246** the 2.2A-R registry;
+  **TD-247** 2.2A-1 authz/concurrency; **TD-248** 2.2A-2 draft revision/activity; **TD-249** 2.2A-3 skill mapping &
+  prerequisite DAG; **TD-250** the 2.2B review/publication/visibility decision. Content track is independent of Telegram.
 - **Payment provider track:** **PAUSED** (no CLICK/Payme merchant application, merchant docs, sandbox, or test
   credentials). Completed payment architecture is intact and must not be modified. (Telegram Stars is a *future*
   PaymentProvider behind the existing boundary — it does not resume the CLICK/Payme track.)
 - **Workflow:** the two-repo phase/checkpoint/SHA workflow is adopted (rules in `izlan/CLAUDE.md`).
 - **No future phase is marked complete.** No implementation phase starts until the owner supplies its specific prompt.
 
-## Baseline (phase/2.2A-3 @ `b355733`; izlan `main` still `d8e6b69` until the PR merges)
+## Baseline (phase/2.2B @ `4c7ce7a`; izlan `main` still `9ebd90a` until the PR merges)
 | Metric | Value |
 |---|---|
-| migrations | 22 (last: `20260821110000_content_schema_hardening`; **no new migration in 2.2A-3**) |
-| unit tests | 458 (2.2A-3 +9: prerequisite-graph DAG-01..07 + hasPath + deep-chain) |
-| e2e tests | 520 (2.2A-3 +21: SA3-01..24 + PR-01..09 + DAG-E1/E2/E3 + audit rollback) |
-| total tests | 978 |
+| migrations | 22 (last: `20260821110000_content_schema_hardening`; **no new migration in 2.2B**) |
+| unit tests | 474 (2.2B +16: visibility VIS-01..08, learner projection, registry AR-09) |
+| e2e tests | 542 (2.2B +22: PB/RW/PUB/RD/MR/PV/VIS + concurrent publish + audit rollback + takedown; blocker correction +4: TD-01..07 execution takedown, RS-TD-01..03 review-session takedown, REP-TD-01 republish-after-takedown, PREREQ-SUBJECT cross-subject) |
+| total tests | 1012 |
 | named CHECK constraints | 46 (unchanged) |
 | drift | clean (empty diff on izlan_dev + izlan_test) |
 
@@ -101,8 +105,7 @@ reflects the `phase/2.2A-3` branch state, OWNER REVIEW PENDING.
 is now an implementation step, not a blocker.)
 
 ## Recommended next build step (subject to owner prompt)
-Phase **2.2B** — Review + Publishing + Preview + Readiness: revision `DRAFT→REVIEW→PUBLISHED→ARCHIVED` transitions
-(`content.publish` + subject scope, no ADMIN bypass), atomic publish (publishedRevisionId pointer move + supersede +
-publishedAt/By), publish-time readiness validation (incl. required-media readiness for IMAGE/AUDIO markers), preview,
-idempotent republish, takedown, centralized learner-visibility gate. Then `2.2C` CMS, `2.2D` bulk import, `2.2E` English A1
-pilot. **Do NOT start without the owner's phase prompt.**
+Phase **2.2C** — Methodist CMS (frontend consuming the 2.2A/2.2B staff APIs: hierarchy/lesson/revision/activity/skill/
+prerequisite authoring + review/publish/preview/readiness/takedown). Then `2.2D` bulk import, `2.2E` English A1 pilot
+content; separately, ActivityMedia management/upload/delivery remains deferred (readiness is enforced but there is no media
+storage). **Do NOT start without the owner's phase prompt.**
