@@ -39,5 +39,11 @@
 ## Notes
 - **Payment provider track PAUSED** after 2.1L-D / 2.1L-C0 (no merchant application / docs / sandbox / credentials).
 - 2.1L-C (real CLICK integration) is UNBLOCKED-pending the CLICK PROTOCOL VERIFICATION BLOCKER (see PROJECT_STATE).
-- The OPEN_QUESTIONS "HOLATI" phase blocks are legacy phase records; under the new workflow they belong in
-  checkpoints/ + this history, leaving OPEN_QUESTIONS for unresolved owner decisions only (migration pending owner OK).
+- **2026-08-21 cleanup:** the per-phase "HOLATI" status blocks were **removed from OPEN_QUESTIONS.md** and consolidated
+  into this history (the table above is their concise record; full per-phase detail lives in the `*_IMPLEMENTATION.md`
+  docs). OPEN_QUESTIONS now holds only genuinely unresolved owner decisions. Accepted content-lifecycle decisions moved
+  to [CONTENT_AUTHORING_RECON.md](CONTENT_AUTHORING_RECON.md) §13a. Historical phases remain `pre-per-phase-SHA`
+  (all in code `19461eb`); no old SHA was fabricated. Complete SHA-bearing checkpoints (from the next phase on) are not
+  duplicated here — they live in [checkpoints/](checkpoints/).
+- **Content-lifecycle decisions ACCEPTED** 2026-08-21 (§13a of the recon doc); to be formalized as TDs at Phase 2.2A-D.
+- **Telegram** is an architecture candidate only (not approved) — see [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) §3.

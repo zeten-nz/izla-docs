@@ -7,11 +7,12 @@
 | Repo | Role | Branch | HEAD SHA (at verification) | Working tree |
 |---|---|---|---|---|
 | `zeten-nz/izlan` | code / schema / migrations / tests | `main` | `19461eb236b20829c226e6931b96d3032b65027` | clean* |
-| `zeten-nz/izla-docs` | product/architecture decisions, checkpoints | `main` | `92cadce4bb5cb5c2c0ea28b5d96e157fe717f552` | clean* |
+| `zeten-nz/izla-docs` | product/architecture decisions, checkpoints | `main` | `188c5f74ca81d6f39573a85d0ea8d4f03981d59b` | clean* |
 
-\* Clean at the moment the SHAs were read. This governance commit (CLAUDE.md, PROJECT_STATE/PHASE_HISTORY/checkpoints)
-adds new files and will advance both HEADs. **The code SHA `19461eb` is the implementation inspected for the 2.2A-P
-recon** (it already contains all of 2.1E→2.1L-D). Per the code↔docs SHA rule, this pointer is the last verified match.
+\* izla-docs `main` @ `188c5f7` merged the workflow-governance scaffolding (PR #1). This OPEN_QUESTIONS cleanup runs on
+branch `chore/open-questions-cleanup` and will advance docs `main` again after merge. **The code SHA `19461eb` is the
+implementation inspected for the 2.2A-P recon** (it already contains all of 2.1E→2.1L-D) and is unchanged by this
+docs-only cleanup. Per the code↔docs SHA rule, `19461eb` is the last verified code↔docs match.
 
 > **Governance note:** phases before 2026-08-21 were committed coarsely to `main` (izlan has only 2 commits total,
 > izla-docs 3). There are **no per-phase SHAs or phase branches for historical phases** — they are all contained in
@@ -20,10 +21,15 @@ recon** (it already contains all of 2.1E→2.1L-D). Per the code↔docs SHA rule
 ## Current position
 - **Last completed:** Phase **2.2A-P** — Content Authoring / Publishing / Methodist Workflow Reconnaissance (NO CODE).
   Result: PASS WITH ARCHITECTURE GAPS. See [CONTENT_AUTHORING_RECON.md](CONTENT_AUTHORING_RECON.md).
+- **Content implementation: NOT STARTED** — the schema models the full authoring/publishing lifecycle, but no CMS /
+  authoring backend / content permissions exist yet. The content-lifecycle decisions are now **ACCEPTED** (2026-08-21;
+  see [CONTENT_AUTHORING_RECON.md](CONTENT_AUTHORING_RECON.md) §13a), to be formalized as TDs when Phase 2.2A-D is built.
 - **Payment provider track:** **PAUSED** (no CLICK/Payme merchant application, merchant docs, sandbox, or test
   credentials). Completed payment architecture is intact and must not be modified.
-- **Next:** awaiting owner review of the 12 content lifecycle decisions (2.2A-P §75); no implementation phase starts
-  until the owner supplies its specific prompt.
+- **Telegram integration:** **architecture CANDIDATE only** — not approved for implementation; open decisions tracked in
+  [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) §3.
+- **Workflow:** the two-repo phase/checkpoint/SHA workflow is adopted (rules in `izlan/CLAUDE.md`).
+- **No future phase is marked complete.** No implementation phase starts until the owner supplies its specific prompt.
 
 ## Baseline (izlan @ 19461eb)
 | Metric | Value |
@@ -31,6 +37,7 @@ recon** (it already contains all of 2.1E→2.1L-D). Per the code↔docs SHA rule
 | migrations | 21 (last: `20260821100000_real_provider_protocol_persistence`) |
 | unit tests | 397 |
 | e2e tests | 432 |
+| total tests | 829 |
 | named CHECK constraints | 45 |
 | drift | clean (empty diff on izlan_dev + izlan_test) |
 
@@ -51,9 +58,12 @@ recon** (it already contains all of 2.1E→2.1L-D). Per the code↔docs SHA rule
    most constants are OFFICIAL-CORROBORATED by 2024 official repos but not raised to current-documentation authority;
    `merchant_trans_id` UUID compatibility has no positive evidence. See
    [REAL_PROVIDER_CONTRACT_HARDENING.md](REAL_PROVIDER_CONTRACT_HARDENING.md) §15.
-2. **12 content lifecycle owner decisions** (gates Phase 2.2A-D): see [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) /
-   [CONTENT_AUTHORING_RECON.md](CONTENT_AUTHORING_RECON.md) §13.
+
+(The former "12 content lifecycle owner decisions" blocker is **RESOLVED** — decisions accepted 2026-08-21; Phase 2.2A-D
+is now an implementation step, not a blocker.)
 
 ## Recommended next build step (subject to owner prompt)
-Phase **2.2A-D** — Content Lifecycle / Schema Hardening (prerequisite self/cycle CHECK, Lesson external import key,
-optional revision concurrency field, SUPERSEDED/REJECTED decision). Do NOT start without the owner's phase prompt.
+Phase **2.2A-D** — Content Lifecycle / Schema Hardening: prerequisite **self-loop CHECK (DB) + full-DAG cycle validation
+at service/transaction level** (a DB CHECK cannot enforce a multi-node cycle), immutable stable Lesson `contentKey` +
+slug uniqueness, `updatedAt` optimistic-concurrency, and the accepted revision-lifecycle model (`DRAFT→REVIEW→PUBLISHED→
+ARCHIVED`, no SUPERSEDED/REJECTED enum). Decisions are accepted (§13a); **do NOT start without the owner's phase prompt.**
