@@ -72,15 +72,32 @@
 - **Reservation/order expiry cleanup** mechanism (queue tech).
 
 ## 3. Telegram (architecture CANDIDATE — implementation NOT approved)
-Telegram is now a candidate architecture track. **Implementation is not approved yet** — these are the genuinely
-unresolved decisions to settle before any Telegram phase:
-- Telegram ↔ existing phone-account **linking**.
-- **Telegram-only registration** — allowed?
-- **Account recovery** after Telegram loss / unlink.
-- **Bot notification permission** lifecycle.
-- **Mini App authentication** boundary.
-- **Telegram Stars / payment** boundary.
-- **Website payment vs Telegram payment** separation.
+Telegram is a candidate architecture track. **Implementation is not approved.** Recon done in Phase 2.2T-P
+([TELEGRAM_INTEGRATION_RECON.md](TELEGRAM_INTEGRATION_RECON.md) — analysis + recommendations; nothing accepted). These
+are the genuinely unresolved **owner decisions** to settle before any Telegram implementation phase (recommendations in
+the recon doc §16):
+1. **Identity model** — generic `UserIdentity` + nullable phone (rec) vs a Telegram-only side table. **Cannot be
+   finalized until the cross-surface Telegram identifier verification gate is closed** — that gate is an external
+   technical-contract fact (NOT an owner decision), tracked in
+   [TELEGRAM_INTEGRATION_RECON.md](TELEGRAM_INTEGRATION_RECON.md) §16a.
+2. **Telegram-only signup** — allow phone-less accounts (rec) vs require a verified phone.
+3. **Existing phone-account auto-link** — only on verified-phone match; auto vs confirm-step.
+4. **`phone` scope** — request by default vs optional (it is consent-gated, never guaranteed).
+5. **Recovery policy** when Telegram and/or phone is lost.
+6. **Last-auth-method invariant** — forbid removing the only auth method without recovery (rec: adopt).
+7. **Mini App session model** — accept the **invariant** (Telegram auth converges onto the Izlan `User`/`AuthSession`
+   lifecycle); the exact credential **transport is VERIFY-LATER** after real Mini App environment testing (do not choose
+   it now; no long-lived refresh token in JS/localStorage).
+8. **Bot notification opt-in** model (which consent gates bot messaging).
+9. **Channel mission/reward** policy — none / one-time cosmetic-XP / IZL (rec: never IZL for a repeatable join).
+10. **Telegram Stars boundary** — Stars (`XTR`) for digital goods inside Telegram; Stars as a future `PaymentProvider`
+    behind the existing finalization boundary.
+11. **Website vs Telegram payment** — izlan.uz → CLICK/Payme; Telegram → Stars; both allowed per surface.
+12. **Manual P2P / admin payment** — future auditable `MANUAL_ADMIN_PAYMENT` only, or reject entirely (no scraping).
+
+> **Not owner decisions (tracked in the recon doc, not here):** the **cross-surface Telegram identifier verification
+> gate** (OIDC `sub` ↔ Bot/Mini App `user_id` — an external technical fact that gates decision #1) and the **Mini App
+> credential-transport VERIFY-LATER** concern. See [TELEGRAM_INTEGRATION_RECON.md](TELEGRAM_INTEGRATION_RECON.md) §16a.
 
 ## 4. Later (deferred by decision — `D-43`)
 - Mobile stack (Android/iOS full app); game-currency vendor integrations.

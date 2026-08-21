@@ -6,32 +6,41 @@
 ## Repository pointers (verified 2026-08-21)
 | Repo | Role | Branch | HEAD SHA (at verification) | Working tree |
 |---|---|---|---|---|
-| `zeten-nz/izlan` | code / schema / migrations / tests | `main` | `19461eb236b20829c226e6931b96d3032b65027` | clean* |
-| `zeten-nz/izla-docs` | product/architecture decisions, checkpoints | `main` | `188c5f74ca81d6f39573a85d0ea8d4f03981d59b` | clean* |
+| `zeten-nz/izlan` | code / schema / migrations / tests | `main` | `281ca4159e3bfe08ce9bb1e6a26f865f04cd5017` | clean |
+| `zeten-nz/izla-docs` | product/architecture decisions, checkpoints | `main` | `db8dfdbc92e66d2c73952cb92797a3e2cbb19a5d` | clean |
 
-\* izla-docs `main` @ `188c5f7` merged the workflow-governance scaffolding (PR #1). This OPEN_QUESTIONS cleanup runs on
-branch `chore/open-questions-cleanup` and will advance docs `main` again after merge. **The code SHA `19461eb` is the
-implementation inspected for the 2.2A-P recon** (it already contains all of 2.1E→2.1L-D) and is unchanged by this
-docs-only cleanup. Per the code↔docs SHA rule, `19461eb` is the last verified code↔docs match.
+\* Inspected for the **2.2T-P Telegram recon**: **izlan `main` @ `281ca415`** — this differs from `19461eb` only by
+`CLAUDE.md` (workflow rules, PR #1 merged), so the **runtime code/schema/tests are unchanged** and `281ca415` is the
+current verified code↔docs match. This recon runs on docs branch `phase/2.2T-P` (off docs `main` @ `db8dfdbc`, which
+merged the OPEN_QUESTIONS cleanup, PR #3) and advances docs `main` after merge.
 
 > **Governance note:** phases before 2026-08-21 were committed coarsely to `main` (izlan has only 2 commits total,
 > izla-docs 3). There are **no per-phase SHAs or phase branches for historical phases** — they are all contained in
 > code `19461eb` / docs `92cadce`. Per-phase SHA recording + `phase/<id>` branches begin now.
 
 ## Current position
-- **Last completed:** Phase **2.2A-P** — Content Authoring / Publishing / Methodist Workflow Reconnaissance (NO CODE).
-  Result: PASS WITH ARCHITECTURE GAPS. See [CONTENT_AUTHORING_RECON.md](CONTENT_AUTHORING_RECON.md).
+- **Last completed:** Phase **2.2T-P** — Telegram Integration Architecture Reconnaissance (NO CODE). Result: PASS WITH
+  ARCHITECTURE GAPS — **recon complete on branch `phase/2.2T-P`, OWNER REVIEW PENDING (not merged)**. See
+  [TELEGRAM_INTEGRATION_RECON.md](TELEGRAM_INTEGRATION_RECON.md) + [checkpoints/2.2T-P.md](checkpoints/2.2T-P.md).
+  (Prior recon: 2.2A-P content authoring — [CONTENT_AUTHORING_RECON.md](CONTENT_AUTHORING_RECON.md).)
+- **Telegram integration:** **architecture CANDIDATE — NOT STARTED**, not approved for implementation. Recon found the
+  codebase is already identity-agnostic under the phone layer; a generic `UserIdentity` + nullable phone (Option B) is
+  recommended — but there is a **cross-surface identity verification gate** (a technical external-contract fact, **NOT an
+  owner decision**: OIDC `sub` is not documented as equal to the Bot/Mini App numeric `user_id`; it gates the identity
+  model and must be verified before 2.2T-D), the Mini App session **transport is VERIFY-LATER** (accept the
+  converge-onto-Izlan-session invariant only), and a pre-existing suspension-revocation gap.
+  **12 owner decisions surfaced (none accepted)** plus those technical gates — [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) §3 /
+  recon §16 & §16a.
 - **Content implementation: NOT STARTED** — the schema models the full authoring/publishing lifecycle, but no CMS /
-  authoring backend / content permissions exist yet. The content-lifecycle decisions are now **ACCEPTED** (2026-08-21;
-  see [CONTENT_AUTHORING_RECON.md](CONTENT_AUTHORING_RECON.md) §13a), to be formalized as TDs when Phase 2.2A-D is built.
+  authoring backend / content permissions exist yet. The content-lifecycle decisions are **ACCEPTED** (2026-08-21,
+  [CONTENT_AUTHORING_RECON.md](CONTENT_AUTHORING_RECON.md) §13a); **Phase 2.2A-D can proceed independently of Telegram.**
 - **Payment provider track:** **PAUSED** (no CLICK/Payme merchant application, merchant docs, sandbox, or test
-  credentials). Completed payment architecture is intact and must not be modified.
-- **Telegram integration:** **architecture CANDIDATE only** — not approved for implementation; open decisions tracked in
-  [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) §3.
+  credentials). Completed payment architecture is intact and must not be modified. (Telegram Stars is a *future*
+  PaymentProvider behind the existing boundary — it does not resume the CLICK/Payme track.)
 - **Workflow:** the two-repo phase/checkpoint/SHA workflow is adopted (rules in `izlan/CLAUDE.md`).
 - **No future phase is marked complete.** No implementation phase starts until the owner supplies its specific prompt.
 
-## Baseline (izlan @ 19461eb)
+## Baseline (izlan @ 281ca415 — runtime unchanged from 19461eb; only CLAUDE.md added)
 | Metric | Value |
 |---|---|
 | migrations | 21 (last: `20260821100000_real_provider_protocol_persistence`) |
