@@ -12,6 +12,7 @@
 | Phase | Title | Result | Mig | Unit | E2E | Code SHA | Docs SHA | Checkpoint |
 |---|---|---|---|---|---|---|---|---|
 | 2.2T-P | Telegram integration architecture recon (NO CODE) | PASS w/ gaps | 21 | 397 | 432 | `281ca415` | `phase/2.2T-P` (final SHA in checkpoint/PR) | [2.2T-P.md](checkpoints/2.2T-P.md) |
+| 2.2A-D | Content lifecycle / schema hardening (Lesson.contentKey + prereq self-loop CHECK) | PASS | 22 | 397 | 436 | `7dec7bff` | `phase/2.2A-D` (SHA in checkpoint/PR) | [2.2A-D.md](checkpoints/2.2A-D.md) |
 | _next_ | (awaiting owner phase prompt) | — | — | — | — | — | — | — |
 
 ## Historical phases (pre-per-phase-SHA — all in code `19461eb`, docs `92cadce`)
@@ -55,4 +56,7 @@
   inspected @ `281ca415`, runtime unchanged) — see [TELEGRAM_INTEGRATION_RECON.md](TELEGRAM_INTEGRATION_RECON.md) +
   [checkpoints/2.2T-P.md](checkpoints/2.2T-P.md); **12 owner decisions** in [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) §3, plus
   **technical verification gates** (cross-surface identity key; Mini App transport VERIFY-LATER) in the recon doc §16a.
+- **Phase 2.2A-D COMPLETE on branch** (2026-08-21, code `7dec7bff`): content schema hardening — `Lesson.contentKey`
+  (NOT NULL + UNIQUE) + `lesson_prerequisite` self-loop CHECK; migration 22, CHECK 46, e2e 436. Accepted content
+  decisions formalized as **TD-240..245**. Content authoring application layer still NOT STARTED (next: 2.2A-R).
   **Phase 2.2A-D (content schema hardening) can proceed independently of Telegram.**
