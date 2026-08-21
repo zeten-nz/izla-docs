@@ -53,5 +53,6 @@
 - **Content-lifecycle decisions ACCEPTED** 2026-08-21 (§13a of the recon doc); to be formalized as TDs at Phase 2.2A-D.
 - **Telegram** is an architecture candidate only (not approved). **Phase 2.2T-P recon COMPLETE** (2026-08-21, code
   inspected @ `281ca415`, runtime unchanged) — see [TELEGRAM_INTEGRATION_RECON.md](TELEGRAM_INTEGRATION_RECON.md) +
-  [checkpoints/2.2T-P.md](checkpoints/2.2T-P.md); 12 owner decisions in [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) §3.
+  [checkpoints/2.2T-P.md](checkpoints/2.2T-P.md); 13 owner decisions (incl. the cross-surface identity key) in
+  [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) §3.
   **Phase 2.2A-D (content schema hardening) can proceed independently of Telegram.**
