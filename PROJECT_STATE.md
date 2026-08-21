@@ -63,9 +63,10 @@ docs-only cleanup. Per the code↔docs SHA rule, `19461eb` is the last verified 
 is now an implementation step, not a blocker.)
 
 ## Recommended next build step (subject to owner prompt)
-Phase **2.2A-D** — Content Lifecycle / Schema Hardening: prerequisite **self-loop CHECK (DB) + full-DAG cycle validation
-at service/transaction level** (a DB CHECK cannot enforce a multi-node cycle), an immutable stable Lesson `contentKey`
-(import/business identity; title is not identity — Lesson **slug** stays a separate routing/SEO concern, NOT content
-identity and NOT part of this hardening), `updatedAt` optimistic-concurrency, and the accepted revision-lifecycle model
-(`DRAFT→REVIEW→PUBLISHED→ARCHIVED`, no SUPERSEDED/REJECTED enum). Decisions are accepted (§13a); **do NOT start without
-the owner's phase prompt.**
+Phase **2.2A-D** — Content Lifecycle / Schema Hardening (**minimal, schema-only**): exactly two schema changes — a
+**LessonPrerequisite self-loop CHECK** (`lesson_id <> prerequisite_lesson_id`) and an **immutable stable Lesson
+`contentKey`** (import/business identity; title is not identity — Lesson **slug** stays a separate routing/SEO concern,
+NOT content identity and NOT part of this hardening). Service-layer enforcement of the accepted contracts —
+**full-DAG cycle prevention** and **`updatedAt` optimistic-concurrency** — belongs to **Phase 2.2A** (Content Authoring
+Backend), not 2.2A-D; **bulk-import format/infrastructure** is **Phase 2.2D**. Decisions are accepted (§13a); **do NOT
+start without the owner's phase prompt.**

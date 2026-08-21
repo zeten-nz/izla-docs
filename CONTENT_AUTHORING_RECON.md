@@ -186,11 +186,11 @@ BLOCKED) is a future service check; text-first English MVP need not block on tra
 | 24 | archive/delete policy | PASS (Restrict FKs prevent hard-delete of referenced); RESOLVED §13a (referenced never hard-deleted; unreferenced DRAFT deletable) |
 | 25 | rich text | RESOLVED §13a (restricted Markdown; raw HTML not authority); schema representation unbuilt |
 | 26 | media | PASS (schema); SERVICE GAP (unwired); transcript/captions DEFERRED §13a |
-| 27 | bulk import | SERVICE GAP (none); RESOLVED §13a (structured JSON package; DRAFT-only) |
+| 27 | bulk import | SERVICE GAP (none) — FUTURE (Phase 2.2D); structured-JSON→validate→dry-run→DRAFT is a RECOMMENDED design (not yet an accepted decision); only import IDENTITY is RESOLVED §13a (Lesson.contentKey) |
 | 28 | import idempotency | RESOLVED §13a (immutable Lesson contentKey; title≠identity); SCHEMA GAP (contentKey field built at 2.2A-D) |
 | 29 | audit | PASS (StaffAudit); SERVICE GAP (unwired) |
 | 30 | edit concurrency | RESOLVED §13a (updatedAt optimistic concurrency; no dedicated version field) |
-| 31 | production seed/content process | OPEN (pilot-first) |
+| 31 | production seed/content process | RESOLVED §13a (initial pilot ≈10–20 English A1 lessons); broader production/import operating process = future |
 | 32 | AI authoring boundary | PASS (source/aiMetadata; provenance) |
 
 ## 13a. ACCEPTED OWNER DECISIONS (2026-08-21)
@@ -231,18 +231,22 @@ OPEN_QUESTIONS accordingly.
 11. Optimistic editing concurrency (updatedAt check vs explicit version/lock).
 12. Production content pilot size (recommend tiny A1 pilot before bulk).
 
-## 14. Recommended implementation sequence (§76) — subject to owner review
-1. **2.2A-D — Content Lifecycle / Schema Hardening** (accepted decisions §13a): LessonPrerequisite **self-loop DB CHECK**
-   (`lesson_id <> prerequisite_lesson_id`) + **full-DAG cycle prevention in service/transaction validation** (a DB CHECK
-   cannot enforce a multi-node cycle); an **immutable stable Lesson `contentKey`** (import/business identity; title is not
-   identity; Lesson slug stays a separate routing/SEO concern, not content identity); the accepted **`updatedAt`
-   optimistic-concurrency** contract where application-layer enforcement is needed; and the accepted revision-lifecycle
-   model (`DRAFT→REVIEW→PUBLISHED→ARCHIVED`, reject→DRAFT). **NOT in scope** (accepted §13a): SUPERSEDED/REJECTED states,
-   a dedicated concurrency version field, media transcript/captions (deferred). (One migration; schema-only.)
+## 14. Recommended implementation sequence (§76) — subject to owner phase prompt
+1. **2.2A-D — Content Lifecycle / Schema Hardening** (minimal, schema-only): exactly two schema changes —
+   (a) a **LessonPrerequisite self-loop DB CHECK** (`lesson_id <> prerequisite_lesson_id`), and (b) an **immutable stable
+   Lesson `contentKey`** (import/business identity; title is not identity; Lesson slug stays a separate routing/SEO
+   concern, not content identity). It **documents** the accepted contracts below but does **not** implement their
+   service-layer enforcement: **full-DAG cycle prevention** (a DB CHECK cannot detect a multi-node cycle) → Phase 2.2A;
+   **`updatedAt` optimistic-concurrency enforcement** → Phase 2.2A; **revision-lifecycle enforcement**
+   (`DRAFT→REVIEW→PUBLISHED→ARCHIVED`, reject→DRAFT) → authoring/publishing phases. **Not built** (accepted §13a):
+   SUPERSEDED/REJECTED states, a dedicated concurrency version column, media transcript/captions (deferred). (One
+   migration; schema-only.)
 2. **2.2A-R — Canonical Activity Registry + Shared Payload Validator**: single source of truth (type → schema → scoring →
    renderer flags) replacing the duplicated parsers/sets; used by runtime AND future authoring. (Refactor; behavior-preserving.)
 3. **2.2A — Content Authoring Backend**: subject-scoped CRUD for hierarchy + lessons + draft revisions + activities +
-   skills + prereqs; SubjectAssignment enforcement; content permission codes; StaffAudit wiring; write-time validation.
+   skills + prereqs; SubjectAssignment enforcement; content permission codes; StaffAudit wiring; write-time validation;
+   **full-DAG prerequisite cycle prevention** (service/transaction validation, where prerequisite writers exist); and
+   **`updatedAt` optimistic-concurrency enforcement** in the update/write services.
 4. **2.2B — Publishing / Revision Workflow**: atomic publish transaction (pointer move + supersede + publishedAt/By),
    publish validation (hard blockers vs warnings), preview, idempotent republish, takedown, centralized learner-visibility gate.
 5. **2.2C — Methodist CMS** (frontend, out of backend scope here).
