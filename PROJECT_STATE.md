@@ -25,10 +25,12 @@ merged the OPEN_QUESTIONS cleanup, PR #3) and advances docs `main` after merge.
   (Prior recon: 2.2A-P content authoring — [CONTENT_AUTHORING_RECON.md](CONTENT_AUTHORING_RECON.md).)
 - **Telegram integration:** **architecture CANDIDATE — NOT STARTED**, not approved for implementation. Recon found the
   codebase is already identity-agnostic under the phone layer; a generic `UserIdentity` + nullable phone (Option B) is
-  recommended — but there is a **cross-surface identity gap** (OIDC `sub` is NOT documented as equal to the Bot/Mini App
-  numeric `user_id`; it gates the identity model and must be verified before 2.2T-D), the Mini App session **transport is
-  VERIFY-LATER** (accept the converge-onto-Izlan-session invariant only), and a pre-existing suspension-revocation gap.
-  **13 owner decisions surfaced (none accepted)** — [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) §3 / recon §16.
+  recommended — but there is a **cross-surface identity verification gate** (a technical external-contract fact, **NOT an
+  owner decision**: OIDC `sub` is not documented as equal to the Bot/Mini App numeric `user_id`; it gates the identity
+  model and must be verified before 2.2T-D), the Mini App session **transport is VERIFY-LATER** (accept the
+  converge-onto-Izlan-session invariant only), and a pre-existing suspension-revocation gap.
+  **12 owner decisions surfaced (none accepted)** plus those technical gates — [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) §3 /
+  recon §16 & §16a.
 - **Content implementation: NOT STARTED** — the schema models the full authoring/publishing lifecycle, but no CMS /
   authoring backend / content permissions exist yet. The content-lifecycle decisions are **ACCEPTED** (2026-08-21,
   [CONTENT_AUTHORING_RECON.md](CONTENT_AUTHORING_RECON.md) §13a); **Phase 2.2A-D can proceed independently of Telegram.**

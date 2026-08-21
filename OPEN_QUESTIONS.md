@@ -76,8 +76,10 @@ Telegram is a candidate architecture track. **Implementation is not approved.** 
 ([TELEGRAM_INTEGRATION_RECON.md](TELEGRAM_INTEGRATION_RECON.md) — analysis + recommendations; nothing accepted). These
 are the genuinely unresolved **owner decisions** to settle before any Telegram implementation phase (recommendations in
 the recon doc §16):
-1. **Identity model** — generic `UserIdentity` + nullable phone (rec) vs a Telegram-only side table. **Gated by #13** —
-   must not be frozen until the cross-surface Telegram identity key is verified.
+1. **Identity model** — generic `UserIdentity` + nullable phone (rec) vs a Telegram-only side table. **Cannot be
+   finalized until the cross-surface Telegram identifier verification gate is closed** — that gate is an external
+   technical-contract fact (NOT an owner decision), tracked in
+   [TELEGRAM_INTEGRATION_RECON.md](TELEGRAM_INTEGRATION_RECON.md) §16a.
 2. **Telegram-only signup** — allow phone-less accounts (rec) vs require a verified phone.
 3. **Existing phone-account auto-link** — only on verified-phone match; auto vs confirm-step.
 4. **`phone` scope** — request by default vs optional (it is consent-gated, never guaranteed).
@@ -92,9 +94,10 @@ the recon doc §16):
     behind the existing finalization boundary.
 11. **Website vs Telegram payment** — izlan.uz → CLICK/Payme; Telegram → Stars; both allowed per surface.
 12. **Manual P2P / admin payment** — future auditable `MANUAL_ADMIN_PAYMENT` only, or reject entirely (no scraping).
-13. **Cross-surface Telegram identity key** — Izlan's canonical stored Telegram identity across OIDC Login (`sub`),
-    Bot API (`user_id`) and Mini App (`user_id`); the official docs do **not** guarantee `sub` == `user_id`. Must be
-    verified/frozen **before** the identity model (#1) is accepted.
+
+> **Not owner decisions (tracked in the recon doc, not here):** the **cross-surface Telegram identifier verification
+> gate** (OIDC `sub` ↔ Bot/Mini App `user_id` — an external technical fact that gates decision #1) and the **Mini App
+> credential-transport VERIFY-LATER** concern. See [TELEGRAM_INTEGRATION_RECON.md](TELEGRAM_INTEGRATION_RECON.md) §16a.
 
 ## 4. Later (deferred by decision — `D-43`)
 - Mobile stack (Android/iOS full app); game-currency vendor integrations.

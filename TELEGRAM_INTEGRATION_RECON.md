@@ -15,7 +15,7 @@ Source: [bots/telegram-login](https://core.telegram.org/bots/telegram-login), [w
 - **`iss` = `https://oauth.telegram.org`**; **`aud` = your Bot ID** (client_id). `id_token` = JWT; signing algs `RS256`(default)/`ES256`/`EdDSA`/`ES256K`. **Algorithm caveat (current official Login docs):** `EdDSA` and `ES256K` are restricted to the `openid` scope only — selecting either **rejects `profile` and `phone`**. So if Izlan needs the OIDC `profile` numeric `id` or a verified `phone`, it must use `RS256` (default) or `ES256`. No algorithm decision now; `RS256` default is the simplest future baseline.
 - **Scopes:** `openid` (required → `sub`,`iss`,`iat`,`exp`) · `profile` (→ `id`,`name`,`preferred_username`,`picture`) · `phone` (→ `phone_number`,`phone_number_verified`, **requires user consent**) · `telegram:bot_access` (allows the bot to DM the user after login; no claim).
 - **Stable OIDC identity = `sub`** (string). A numeric `id` claim is ALSO present (via `profile`). **`preferred_username` is MUTABLE — never an identity key.**
-- **CROSS-SURFACE IDENTITY GAP (load-bearing):** the official material inspected does **NOT** guarantee that OIDC `sub` == the decimal Telegram **Bot API / Mini App `user_id`** — the official example even shows *different* `sub` and `id` values. So OIDC `sub` (issuer/client identity), the OIDC `profile` numeric `id`, and the Bot/Mini App numeric `user_id` must be treated as **distinct identifiers**. `sub` is authoritative for the OIDC login identity; the Bot/Mini App expose numeric `user_id`. **The exact contractual relationship/stability between OIDC `sub` and the Bot/Mini App numeric `user_id` MUST be verified before any identity schema (2.2T-D).** See §3 (options A/B/C) and §16 (owner decision).
+- **CROSS-SURFACE IDENTITY GAP (load-bearing):** the official material inspected does **NOT** guarantee that OIDC `sub` == the decimal Telegram **Bot API / Mini App `user_id`** — the official example even shows *different* `sub` and `id` values. So OIDC `sub` (issuer/client identity), the OIDC `profile` numeric `id`, and the Bot/Mini App numeric `user_id` must be treated as **distinct identifiers**. `sub` is authoritative for the OIDC login identity; the Bot/Mini App expose numeric `user_id`. **The exact contractual relationship/stability between OIDC `sub` and the Bot/Mini App numeric `user_id` MUST be verified before any identity schema (2.2T-D).** This is an **external technical-contract fact** — a **TECHNICAL VERIFICATION GATE**, not an owner decision (the owner cannot decide it). See §3 (options A/B/C) and **§16a**.
 - **Phone is NOT guaranteed** — present only when the `phone` scope is requested AND consented.
 - **Client registration:** the client IS a Telegram bot (via @BotFather); BotFather issues **Client ID + Client Secret** and a **redirect_uri allowlist** ("Allowed URLs").
 
@@ -55,18 +55,18 @@ Source: [bots/payments-stars](https://core.telegram.org/bots/payments-stars).
 | | schema impact | auth-service impact | migration risk | dup-account risk | phone-OTP compat | TG-only signup | future Google/Apple | recovery | security | onboarding |
 |--|--|--|--|--|--|--|--|--|--|--|
 | **A** phone on User + `TelegramIdentity` side table | small (1 table) | small | low | low | unchanged | ✗ (TG-only still needs phone) | ✗ (per-provider tables proliferate) | ok | ok | phone-first stays |
-| **B** provider-neutral `UserIdentity(userId, provider, providerSubject)` + phone nullable (partial-unique) | moderate (1 table + phone nullable + partial unique) | small (generalize 2 `users.*` methods + 1 auth branch) | **low–moderate** (nullable + partial unique; User.id stable) | low (unique `(provider, providerSubject)`) | unchanged (phone = one provider) | ✓ | ✓ (one table, N providers) | flexible | strong (single principal) | phone-first preserved |
+| **B** provider-neutral `UserIdentity(userId, provider, providerSubject)` + phone nullable (non-null unique) | moderate (1 table + phone nullable, non-null unique preserved) | small (generalize 2 `users.*` methods + 1 auth branch) | **low–moderate** (nullable phone; User.id stable) | low (unique `(provider, providerSubject)`) | unchanged (phone = one provider) | ✓ | ✓ (one table, N providers) | flexible | strong (single principal) | phone-first preserved |
 | **C** phone stays sole identity; no linking (separate TG "profile") | none | none | none | — | — | ✗ | ✗ | — | risk of parallel/duplicate identity | — |
 
 ### Recommended identity model — **Option B** (grounded, not aesthetic)
 The codebase is *already* identity-agnostic under the phone layer (sessions/JWT/profile key off `userId`; phone never dereferenced), so Option B is the smallest change that supports Telegram-only users and future Google/Apple without a parallel auth system. Concrete minimum shape (for a later 2.2T-D, **not built now**):
 - Keep `User.id` (uuid7) as the **stable platform principal** — never changes.
-- Make `User.phone` **nullable**, replace the column `@unique` with a **partial unique index** (`phone` unique WHERE NOT NULL).
+- Make `User.phone` **nullable** while keeping every non-null phone unique. (In PostgreSQL/Prisma, `String? @unique` already permits multiple `NULL`s and enforces uniqueness on non-null values — a custom partial index is only needed if a *further* invariant demands it. The exact mechanism is a **2.2T-D** detail after schema inspection; this recon does not require a partial index.)
 - Add `UserIdentity(id, userId FK→User, provider, providerSubject, createdAt, …minimal metadata)` with `@@unique([provider, providerSubject])`. **Because of the CROSS-SURFACE IDENTITY GAP (§1.1)**, the Telegram key is not a single field — evaluate:
   - **A (rec, minimum safe):** `providerSubject` = OIDC `sub` (Login authority) **PLUS a separately indexed/unique Telegram numeric `user_id`** stored as a first-class column (so Bot/Mini App can resolve users by it). **Do NOT bury the numeric `user_id` in unindexed JSON** if the bot must look users up by it.
   - **B:** use the Telegram numeric `user_id` as the canonical cross-surface key — **ONLY if** current official docs explicitly guarantee the OIDC `id` equals the Bot/Mini App `user_id`.
   - **C:** store two provider identifiers/aliases (`telegram_oidc` `sub` + `telegram_user` numeric `id`) mapped to the same Izlan `User`.
-- Phone may remain on `User` for the phone provider (minimum migration) — a later normalization into `UserIdentity` is optional. **The cross-surface key mapping must be verified/frozen before 2.2T-D** (owner decision — the generic identity model must not be frozen until it is clear).
+- Phone may remain on `User` for the phone provider (minimum migration) — a later normalization into `UserIdentity` is optional. **The cross-surface key mapping must be verified/frozen before 2.2T-D** — this is a **technical verification gate (§16a), not an owner decision**; the generic identity model (owner decision #1) cannot be finalized until it is closed.
 - Generalize `createLearnerAfterVerifiedPhone` → `createLearnerAfterVerifiedIdentity(provider, providerSubject, phone?)` reusing the same P2002 duplicate handling on the new unique index; add a Telegram auth branch that reuses `createSession` + `issueAccessToken` + `getAuthBootstrap` unchanged.
 
 ## 4. Telegram-only registration (§7) — OWNER DECISION
@@ -113,7 +113,7 @@ Converge on the **existing** Izlan session system — do **not** create a parall
 - **MVP bot read-model surface to evaluate:** `/start` (link/deep-link), `/today`, `/progress`, `/balance`, `/review`, `/settings`. **Read-model gaps a future bot would expose (do not build):** a compact "today's plan" projection, a streak/progress summary, an XP/IZL balance read — all likely need thin read endpoints over existing domain state.
 
 ## 10. Channel membership boundary (§14)
-- Optional Telegram **channel** (marketing/community). `getChatMember` requires the bot's admin relationship (VERIFY-LATER exact guarantee). **Channel membership must NEVER be login authority, account identity, or subscription/payment authority.**
+- Optional Telegram **channel** (marketing/community). Per the official Bot API, **`getChatMember` is only guaranteed to work for other users when the bot is an administrator** of the chat — so a membership mission relying on guaranteed checks requires the bot to be a channel administrator. **Channel membership must NEVER be login authority, account identity, or subscription/payment authority.**
 - Reward farming risk (join→reward→leave→rejoin). Options: **A** no economic reward · **B** one-time XP/badge/cosmetic mission · **C** IZL economic reward. **Recommended MVP: A or B** (never IZL for a repeatable, weakly-verifiable action). Owner decision; not implemented.
 
 ## 11. Mini App product boundary (§15)
@@ -154,25 +154,25 @@ Evaluate: **A** reuse the responsive Izlan web frontend where practical · **B**
 ## 14. Schema-gap table (§23) — no models created
 | Area | Current model | PASS/GAP | Minimum future change | Owner decision? | Target phase |
 |--|--|--|--|--|--|
-| `User.phone` required+unique | NOT NULL `@unique` | GAP for TG-only | nullable + partial unique (WHERE NOT NULL) | yes (identity model) | 2.2T-D |
+| `User.phone` required+unique | NOT NULL `@unique` | GAP for TG-only | nullable; keep every non-null phone unique (`String? @unique` suffices in PG/Prisma; partial index only if a further invariant needs it — decide at 2.2T-D) | yes (identity model) | 2.2T-D |
 | provider-neutral identity | none | GAP | `UserIdentity(userId,provider,providerSubject)` `@@unique(provider,providerSubject)` | yes | 2.2T-D |
-| **cross-surface Telegram identity key** | N/A | **GAP (must verify)** | freeze the canonical mapping OIDC `sub` ↔ Bot/Mini App numeric `user_id` (not documented as equal) BEFORE schema | **yes** | **before 2.2T-D** |
+| **cross-surface Telegram identity key** | N/A | **GAP — TECHNICAL VERIFICATION GATE** | verify the canonical mapping OIDC `sub` ↔ Bot/Mini App numeric `user_id` (not documented as equal) BEFORE schema (§16a) | **No — technical gate, not an owner decision** | **before 2.2T-D** |
 | Telegram identity storage | none | GAP | `providerSubject`=OIDC `sub` **+ a separately indexed Telegram numeric `user_id`**; decimal **String** (rec) or BIGINT, never 32-bit, never unindexed-JSON-only if the bot resolves by it | yes (cross-surface) | 2.2T-D (verify first) |
 | Telegram-only user | impossible (phone required) | GAP | depends on nullable phone | yes (§7) | 2.2T-D |
 | account linking | none | GAP | single-use nonce (short-TTL cache/table) | — | 2.2T-A |
 | notification/bot consent | none | GAP | minimal `botCanMessage`/`notificationsOptIn`/`linkedAt` | yes (opt-in model) | 2.2T-B |
 | session channel | `platform` free String | PASS (works) | later: enum + device/session list | soft | 2.2T-A/later |
 | suspension revoke | read-time only | GAP (pre-existing) | revoke sessions on status change + refresh live-check | — | any (auth hardening) |
-| Mini App refresh transport | cookie same-site only | GAP for Mini App | non-cookie refresh OR SameSite=None+allowlist | yes (§4 model) | 2.2T-M |
+| Mini App session transport | cookie + CSRF (same-site) | **VERIFY-LATER / environment-dependent** | existing cookie+CSRF **may** need adaptation; exact credential transport **NOT decided** (test real Android/iOS/Desktop/Web envs); invariant = converge onto Izlan `User`/`AuthSession` | No — implementation concern (§16a) | 2.2T-M |
 | Stars payment evidence | PaymentProvider enum (CLICK/PAYME) | GAP (future) | add STARS provider + charge-id external id via existing pipeline | yes | 2.2T-S (after refund domain) |
 | channel mission state | none | GAP (optional) | one-time mission record if B chosen | yes (§14) | later |
 | privacy/unlink | erasure policy OPEN | GAP | unlink + erasure semantics for TG metadata | yes | 2.2T-D/later |
 
 ## 15. Migration risk (§24)
-An identity refactor (Option B) migrates **phone-centric** existing users **without touching `User.id`**: keep every `User.id` as the stable principal (all roles/progress/XP/IZL/subscriptions/relations reference `user_id` and are untouched); make `phone` nullable and swap the column `@unique` for a **partial unique index** (existing non-null phones remain unique — no duplicate risk); existing users need **no** `UserIdentity` row (phone stays their provider). New Telegram users get a `UserIdentity` row and null phone. No user-id change, no data loss, no historical-relation invalidation. (No migration SQL written here.)
+An identity refactor (Option B) migrates **phone-centric** existing users **without touching `User.id`**: keep every `User.id` as the stable principal (all roles/progress/XP/IZL/subscriptions/relations reference `user_id` and are untouched); make `phone` nullable while **keeping every non-null phone unique** (existing non-null phones stay unique — no duplicate risk; `String? @unique` already achieves this in PG/Prisma, exact index mechanism decided at 2.2T-D); existing users need **no** `UserIdentity` row (phone stays their provider). New Telegram users get a `UserIdentity` row and null phone. No user-id change, no data loss, no historical-relation invalidation. (No migration SQL written here.)
 
 ## 16. Owner decisions required (§25) — none accepted here
-1. **Identity model** — A (side table) vs **B (generic `UserIdentity` + nullable phone)** vs C. *Rec: B* — **but must NOT be frozen until the cross-surface Telegram identity key (#13) is verified.**
+1. **Identity model** — A (side table) vs **B (generic `UserIdentity` + nullable phone)** vs C. *Rec: B* — **but cannot be finalized until the cross-surface Telegram identifier verification gate (§16a) is closed** (an external technical fact, not itself an owner decision).
 2. **Telegram-only signup** — allowed (A) vs phone-required (B). *Rec: A with soft phone prompt.*
 3. **Existing phone-account auto-link** — only on **verified-phone match**, auto vs confirm-step. *Rec: link only on verified-phone match, with a confirm step.*
 4. **`phone` scope** — request by default vs optional later linking step. *Rec: optional (don't rely on it; it's consent-gated).*
@@ -184,10 +184,31 @@ An identity refactor (Option B) migrates **phone-centric** existing users **with
 10. **Telegram Stars boundary** — confirm Stars-for-digital-in-Telegram + Stars-as-future-PaymentProvider behind existing finalization. *Rec: confirm.*
 11. **Website vs Telegram payment UX** — website=CLICK/Payme, Telegram=Stars; both allowed per surface. *Rec: confirm.*
 12. **Manual P2P/admin payment** — future auditable `MANUAL_ADMIN_PAYMENT` only, or reject entirely. *Owner; rec future-only, never scraping.*
-13. **Cross-surface Telegram identity key** — what is Izlan's canonical stored Telegram identity across OIDC Login (`sub`), Bot API (`user_id`), and Mini App (`user_id`)? The official docs do **not** guarantee `sub` == `user_id`. *Rec: store OIDC `sub` + a separately indexed numeric `user_id`; **verify/freeze the mapping BEFORE 2.2T-D** — decision #1 (identity model) must not be accepted until this is resolved.*
+
+## 16a. Technical verification gates & blockers (NOT owner decisions)
+These are **not** owner choices — they are external-contract facts or implementation concerns resolved by
+verification/testing, not by an owner decision. Keep them out of the owner-decision numbering.
+- **[GATE] Cross-surface Telegram identifier** — the OIDC Login `sub`, the OIDC `profile` numeric `id`, and the Bot API /
+  Mini App numeric `user_id` are **distinct**, and the inspected official docs do **not** guarantee OIDC `sub` (or `id`)
+  equals the Bot/Mini App `user_id`. **Verification (before 2.2T-D):** determine whether the OIDC `profile` `id` is the
+  *same* Telegram user id used by the Bot API / Mini Apps.
+  - *If VERIFIED:* `telegramUserId` = the canonical cross-surface Telegram identifier; `oidcSub` = the OIDC auth subject /
+    alias; both linked to the same Izlan `User`.
+  - *If NOT authoritatively verifiable:* store OIDC `sub` and the Telegram numeric `user_id` as **separate unique
+    aliases** mapping to the same Izlan `User` **only** after cryptographically safe linking (§6) — **never** infer
+    equality from username / name / avatar.
+  - The **identity model (owner decision #1) cannot be finalized until this gate is closed.** Not implemented now.
+- **[VERIFY-LATER] Mini App credential/cookie transport** — the actual document-origin / cookie / `SameSite` behavior of
+  Izlan's API across real Telegram Android / iOS / Desktop / Web Mini App environments is not established by docs alone.
+  The **architectural invariant is firm** (Telegram auth converges onto the Izlan `User`/`AuthSession` lifecycle); the
+  exact credential transport is decided **after real environment testing**. This recon prescribes **no** specific
+  transport (not non-cookie refresh, not `SameSite=None`, not a JS/localStorage refresh token).
+- **[PRE-EXISTING AUTH GAP] Suspension does not revoke sessions** — `User.status` is read-time only; the `AuthGuard`
+  checks only the JWT signature and refresh does not re-check account status, so a suspended user's tokens keep working
+  until the session is revoked/expires. Independent of Telegram; fix in a future auth hardening.
 
 ## 17. Recommended rollout (§26) — not started
-**Precondition:** the cross-surface Telegram identity key (OIDC `sub` ↔ Bot/Mini App `user_id`) must be **verified/frozen before 2.2T-D**. Then: `2.2T-D` Telegram identity/auth schema hardening (`UserIdentity` + nullable phone + partial unique; OIDC `sub` + a separately indexed Telegram numeric `user_id`, decimal String rec) → `2.2T-A` Telegram Web Login (OIDC) + account linking (nonce) → `2.2T-B` Bot foundation + notifications/read-models → `2.2T-M` Mini App auth + shell (**decides the credential transport after environment testing**) → `2.2T-S` Telegram Stars PaymentProvider (**after** the refund domain exists). **Stars/payment stays later than identity/auth; the CLICK/Payme track does NOT resume because Telegram recon exists.**
+**Precondition (technical verification gate §16a):** the cross-surface Telegram identifier (OIDC `sub` ↔ Bot/Mini App `user_id`) must be **verified before 2.2T-D**. Then: `2.2T-D` Telegram identity/auth schema hardening (`UserIdentity` + nullable phone [non-null unique] + OIDC `sub` + a separately indexed Telegram numeric `user_id`, decimal String rec) → `2.2T-A` Telegram Web Login (OIDC) + account linking (nonce) → `2.2T-B` Bot foundation + notifications/read-models → `2.2T-M` Mini App auth + shell (**decides the credential transport after environment testing**) → `2.2T-S` Telegram Stars PaymentProvider (**after** the refund domain exists). **Stars/payment stays later than identity/auth; the CLICK/Payme track does NOT resume because Telegram recon exists.**
 
 ## 18. Content-track interaction (§27)
 **Can Phase 2.2A-D proceed independently of Telegram? — YES.** 2.2A-D touches only content-domain schema (`LessonPrerequisite` self-loop CHECK + `Lesson.contentKey`); it has **zero** dependency on identity/auth/session/Telegram. Telegram decisions do **not** block 2.2A-D.
