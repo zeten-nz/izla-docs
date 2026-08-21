@@ -13,6 +13,7 @@
 |---|---|---|---|---|---|---|---|---|
 | 2.2T-P | Telegram integration architecture recon (NO CODE) | PASS w/ gaps | 21 | 397 | 432 | `281ca415` | `phase/2.2T-P` (final SHA in checkpoint/PR) | [2.2T-P.md](checkpoints/2.2T-P.md) |
 | 2.2A-D | Content lifecycle / schema hardening (Lesson.contentKey + prereq self-loop CHECK) | PASS | 22 | 397 | 436 | `7dec7bff` | `phase/2.2A-D` (SHA in checkpoint/PR) | [2.2A-D.md](checkpoints/2.2A-D.md) |
+| 2.2A-R | Canonical Activity registry + shared payload validation (behavior-preserving refactor; no schema) | PASS | 22 | 417 | 436 | `bd83c99` | `phase/2.2A-R` (SHA in checkpoint/PR) | [2.2A-R.md](checkpoints/2.2A-R.md) |
 | _next_ | (awaiting owner phase prompt) | — | — | — | — | — | — | — |
 
 ## Historical phases (pre-per-phase-SHA — all in code `19461eb`, docs `92cadce`)
@@ -51,7 +52,8 @@
   to [CONTENT_AUTHORING_RECON.md](CONTENT_AUTHORING_RECON.md) §13a. Historical phases remain `pre-per-phase-SHA`
   (all in code `19461eb`); no old SHA was fabricated. Complete SHA-bearing checkpoints (from the next phase on) are not
   duplicated here — they live in [checkpoints/](checkpoints/).
-- **Content-lifecycle decisions ACCEPTED** 2026-08-21 (§13a of the recon doc); to be formalized as TDs at Phase 2.2A-D.
+- **Content-lifecycle decisions accepted 2026-08-21** (§13a of the recon doc) and subsequently **formalized as TD-240..245
+  in Phase 2.2A-D**.
 - **Telegram** is an architecture candidate only (not approved). **Phase 2.2T-P recon COMPLETE** (2026-08-21, code
   inspected @ `281ca415`, runtime unchanged) — see [TELEGRAM_INTEGRATION_RECON.md](TELEGRAM_INTEGRATION_RECON.md) +
   [checkpoints/2.2T-P.md](checkpoints/2.2T-P.md); **12 owner decisions** in [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) §3, plus
@@ -59,4 +61,12 @@
 - **Phase 2.2A-D COMPLETE on branch** (2026-08-21, code `7dec7bff`): content schema hardening — `Lesson.contentKey`
   (NOT NULL + UNIQUE) + `lesson_prerequisite` self-loop CHECK; migration 22, CHECK 46, e2e 436. Accepted content
   decisions formalized as **TD-240..245**. Content authoring application layer still NOT STARTED (next: 2.2A-R).
-  **Phase 2.2A-D (content schema hardening) can proceed independently of Telegram.**
+  **Phase 2.2A-D (content schema hardening) can proceed independently of Telegram.** *(2.2A-D merged to `main`:
+  izlan `2e1c9e32`, izla-docs `fecbfad9`.)*
+- **Phase 2.2A-R COMPLETE on branch** (2026-08-21, code `bd83c99`): canonical Lesson Activity registry
+  (`src/content/activity/activity-registry.ts`) is the one source of truth for objective/view-only/unsupported
+  classification (was duplicated across the payload parser, completion eligibility, daily-mission policy/repo,
+  learner-signals, review-session); a neutral shared choice-question primitive
+  (`src/common/payload/choice-question-payload.ts`) backs BOTH the Lesson objective and AssessmentItem placement
+  parsers **without collapsing the two domains**. Behavior-preserving: **no schema/migration** (migrations 22, CHECK 46);
+  unit 397→417 (+20), e2e 436 unchanged. **TD-246**. Authoring backend still NOT STARTED (next: 2.2A).
