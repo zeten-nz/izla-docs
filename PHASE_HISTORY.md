@@ -1,0 +1,43 @@
+# Izlan — Phase History (append-only index)
+
+> Chronological index of phases. Full immutable checkpoints (with SHAs) live in [checkpoints/](checkpoints/) **from
+> 2026-08-21 onward**. Everything before that date was committed coarsely to `main` and has **no per-phase SHA** — all
+> historical phases are contained in code `19461eb` / docs `92cadce`. Authoritative per-phase detail for historical
+> phases lives in the `*_IMPLEMENTATION.md` docs and the OPEN_QUESTIONS "HOLATI" blocks (pending migration to
+> checkpoints/). Test counts shown are as reported at each phase; treat counts as informational, not a quality target.
+
+## SHA-recorded phases (new workflow, 2026-08-21+)
+| Phase | Title | Result | Mig | Unit | E2E | Code SHA | Docs SHA | Checkpoint |
+|---|---|---|---|---|---|---|---|---|
+| _next_ | (awaiting owner phase prompt) | — | — | — | — | — | — | — |
+
+## Historical phases (pre-per-phase-SHA — all in code `19461eb`, docs `92cadce`)
+| Phase | Title | Mig | Unit | E2E | TDs |
+|---|---|---|---|---|---|
+| 1.1–1.2C-2 | Auth architecture + data-model reviews (core/learning/finance/community) | — | — | — | TD-01..80, IN-01..06 |
+| 1.3 | Prisma Schema v1 (`20260819100830_init`) — 83 model, 49 enum | 1 | 21 verif | — | — |
+| 1.4A/B/C | Backend foundation; auth core; auth HTTP + access JWT + web security | 1 | 62 | 46 | IN-07..26 |
+| 1.5A/A-2 | Learner onboarding + profile; learning-intent persistence | 2 | 77 | 62 | TD-93 |
+| 1.5B/B-2 | Placement/diagnostic assessment foundation + adaptive contract hardening | 3 | 130 | 82 | TD-94/95/96, IN-32..45 |
+| 1.5C… | Skill measurement derivation + versioning | 4–5 | — | — | TD-98/113 |
+| 1.6/1.7/1.8/1.9 | Roadmap; daily plan; lesson execution/completion; learner signals; review candidates/sessions; mastery; learning-progress merge | 6–10 | — | — | TD-108..130 |
+| 2.0B/C-2/D | Daily missions; XP mission reward + provenance; XP progression projection | 11–13 | — | — | TD-136/141/146 |
+| 2.1A/B | IZL reward; IZL wallet projection + reservation safety | 13–14 | 355 | 288 | TD-156..160 |
+| 2.1C-PO/C-2/D | PaymentOrder purchase intent; redemption intent; discount commit | 15–17 | 361 | 310 | TD-167..182 |
+| 2.1E | Payment execution foundation | 18 | — | — | TD-183..188 |
+| 2.1F | Verified payment evidence (PENDING→SUCCEEDED; order stays PENDING) | 19 | 361 | 345 | TD-189..194 |
+| 2.1G-D | Finalization contract + schema hardening | 20 | 378 | 351 | TD-195..204 |
+| 2.1G | Verified payment economic finalization (atomic PAID+Subscription+Cycle+REDEEM) | 20 | 378 | 369 | TD-205..210 |
+| 2.1H | Finalization recovery / reconciliation | 20 | 384 | 378 | TD-211..215 |
+| 2.1I | Verified non-success evidence (PENDING→FAILED/CANCELLED) | 20 | 384 | 391 | TD-216..221 |
+| 2.1J | Payment order reopen / retry foundation | 20 | 386 | 405 | TD-222..227 |
+| 2.1K | Terminal payment reopen recovery / reconciliation | 20 | 390 | 414 | TD-228..232 |
+| 2.1L-D | Real provider contract / persistence hardening (Payme verified; CLICK shell/blocker) | 21 | 397 | 432 | TD-233..239 |
+| 2.1L-C0 | CLICK protocol verification closure (NO CODE) — blocker NOT closed | 21 | 397 | 432 | — |
+| 2.2A-P | Content authoring/publishing/methodist workflow recon (NO CODE) | 21 | 397 | 432 | — |
+
+## Notes
+- **Payment provider track PAUSED** after 2.1L-D / 2.1L-C0 (no merchant application / docs / sandbox / credentials).
+- 2.1L-C (real CLICK integration) is UNBLOCKED-pending the CLICK PROTOCOL VERIFICATION BLOCKER (see PROJECT_STATE).
+- The OPEN_QUESTIONS "HOLATI" phase blocks are legacy phase records; under the new workflow they belong in
+  checkpoints/ + this history, leaving OPEN_QUESTIONS for unresolved owner decisions only (migration pending owner OK).
