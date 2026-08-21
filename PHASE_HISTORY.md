@@ -17,6 +17,7 @@
 | 2.2A-1 | Content authoring backend Part 1 — authz + subject scope + hierarchy + logical Lesson (no schema; +owner-review hardening) | PASS | 22 | 423 | 472 | `abea1c4` | `phase/2.2A-1` (SHA in checkpoint/PR) | [2.2A-1.md](checkpoints/2.2A-1.md) |
 | 2.2A-2 | Draft LessonRevision + Activity authoring + payload contract closure (objective/markdown/media; no schema; +OCC token hardening) | PASS | 22 | 449 | 499 | `e716bd2` | `phase/2.2A-2` (SHA in checkpoint/PR) | [2.2A-2.md](checkpoints/2.2A-2.md) |
 | 2.2A-3 | Skill + LessonSkill + ActivitySkill + prerequisite DAG authoring (Subject-lock cycle prevention; no schema) | PASS | 22 | 458 | 520 | `b355733` | `phase/2.2A-3` (SHA in checkpoint/PR) | [2.2A-3.md](checkpoints/2.2A-3.md) |
+| 2.2B | Review + publishing + preview + readiness + centralized learner visibility + takedown (Lesson-lock; no schema) | PASS | 22 | 474 | 538 | `85ddb10` | `phase/2.2B` (SHA in checkpoint/PR) | [2.2B.md](checkpoints/2.2B.md) |
 | _next_ | (awaiting owner phase prompt) | — | — | — | — | — | — | — |
 
 ## Historical phases (pre-per-phase-SHA — all in code `19461eb`, docs `92cadce`)
@@ -66,6 +67,16 @@
   decisions formalized as **TD-240..245**. Content authoring application layer still NOT STARTED (next: 2.2A-R).
   **Phase 2.2A-D (content schema hardening) can proceed independently of Telegram.** *(2.2A-D merged to `main`:
   izlan `2e1c9e32`, izla-docs `fecbfad9`.)*
+- **Phase 2.2B COMPLETE on branch** (2026-08-21, code `85ddb10`): review + publishing + preview + readiness + learner
+  visibility. `content.publish` + MVP self-publish; top-down hierarchy publish; revision `DRAFT→REVIEW→PUBLISHED→ARCHIVED`
+  (+ REVIEW→DRAFT audited-reason return); **atomic publication** serialized on the Lesson row (`FOR UPDATE`) — old current
+  revision ARCHIVED, new PUBLISHED (reviewedBy/publishedBy/publishedAt + duration cache), `Lesson.publishedRevisionId`
+  switched, one transaction with audit; **idempotent republish**; concurrent inverse publishes cannot both win; canonical
+  publish-readiness (parent/prerequisite/skill/media; metadata-only); learner-safe preview + ONE shared learner projector
+  (Markdown for TEXT/EXPLANATION/EXAMPLE; answerKey stripped); ONE centralized visibility authority (full Subject→Topic +
+  pointer coherence) reconciling roadmap + LessonExecution; urgent takedown removes access without deleting history. No
+  schema/migration (migrations 22, CHECK 46); unit 458→474, e2e 520→538. **TD-250**. **Content authoring + publication is
+  now end-to-end complete for the text/objective MVP.** Next: 2.2C CMS. *(2.2A-3 merged to `main`: izlan `9ebd90a`, izla-docs `4b8b89f`.)*
 - **Phase 2.2A-3 COMPLETE on branch** (2026-08-21, code `b355733`; skill-create authz-boundary fix on `beb31d5`): Skill authoring + Skill mapping + prerequisite DAG —
   `/api/staff/content` subject-scoped Skill (no delete/archive/merge; ACTIVE-only edits; strict OCC), LessonSkill (DRAFT
   logical Lesson, Lesson.updatedAt token), ActivitySkill (DRAFT revision, Revision.updatedAt token), LessonPrerequisite

@@ -193,10 +193,10 @@ BLOCKED) is a future service check; text-first English MVP need not block on tra
 | 5 | revision numbering (`version` unique) | PASS |
 | 6 | published-revision pointer | PASS |
 | 7 | published immutability | PASS (schema/convention); SERVICE GAP (enforce on future writer) |
-| 8 | review workflow | SERVICE GAP (states exist; no workflow) |
-| 9 | publish authority | RESOLVED §13a (content.publish + subject scope; self-publish OK; no ADMIN bypass) + SERVICE GAP |
+| 8 | review workflow | **IMPLEMENTED 2.2B** (submit-review DRAFT→REVIEW [content.author]; return-to-draft REVIEW→DRAFT [content.publish, audited reason]; publish REVIEW→PUBLISHED; readiness gate; TD-250) |
+| 9 | publish authority | RESOLVED §13a; **IMPLEMENTED 2.2B** (content.publish + SubjectAssignment; MVP self-publish; no ADMIN bypass; atomic Lesson.publishedRevisionId switch, Lesson-row FOR UPDATE, idempotent republish; TD-250) |
 | 10 | methodist subject scope | PASS (SubjectAssignment); **enforcement IMPLEMENTED 2.2A-1** (content.author + DB-resolved SubjectAssignment on every child mutation; IDOR-safe not-found; no role-name bypass; TD-247) |
-| 11 | learner draft isolation | SERVICE GAP (PUBLISHED gate re-implemented per read path, not centralized) |
+| 11 | learner draft isolation | **IMPLEMENTED 2.2B** — ONE centralized visibility authority (full Subject→Topic + current-pointer coherence) reconciling LessonExecution + roadmap (previously stopped at Level); TD-250 |
 | 12 | activity payload validation | runtime parsers DE-DUPLICATED (2.2A-R); **WRITE-TIME authoring validation IMPLEMENTED 2.2A-2** — one registry-driven dispatcher (objective/markdown/media contracts; unsupported not authorable); TD-248 |
 | 13 | activity type registry | ✅ IMPLEMENTED 2.2A-R (canonical `activity-registry.ts`; set no longer copy-pasted; exhaustiveness-tested) |
 | 14 | ordering (position unique) | PASS; SERVICE GAP (safe reorder endpoint) |
@@ -208,7 +208,7 @@ BLOCKED) is a future service check; text-first English MVP need not block on tra
 | 20 | learning-session revision freeze | PASS (pin on progress/attempt) |
 | 21 | historical attempt integrity | PASS |
 | 22 | preview | SERVICE GAP (no draft preview surface) |
-| 23 | urgent takedown | PASS (LessonStatus ARCHIVED + hierarchy gate); SERVICE GAP (no endpoint); RESOLVED §13a (Lesson ARCHIVED for MVP; no HIDDEN state) |
+| 23 | urgent takedown | RESOLVED §13a; **IMPLEMENTED 2.2B** (POST /lessons/:id/archive, content.publish + audited reason; removes learner access without deleting history or moving the pointer) |
 | 24 | archive/delete policy | PASS (Restrict FKs prevent hard-delete of referenced); RESOLVED §13a (referenced never hard-deleted; unreferenced DRAFT deletable) |
 | 25 | rich text | RESOLVED §13a (restricted Markdown; raw HTML not authority); schema representation unbuilt |
 | 26 | media | PASS (schema); SERVICE GAP (unwired); transcript/captions DEFERRED §13a |
@@ -288,8 +288,12 @@ implemented there; TD-246 is the separate 2.2A-R Activity-registry decision). Re
      (whole-Subject graph + Subject-row `FOR UPDATE` serialization; concurrent inverse edges cannot both commit). Writes
      the existing learner authorities; learner runtime unchanged. TD-249; unit 449→458, e2e 499→520. **Phase 2.2A authoring
      backend is now functionally complete for the text/objective MVP scope.**
-4. **2.2B — Publishing / Revision Workflow**: atomic publish transaction (pointer move + supersede + publishedAt/By),
-   publish validation (hard blockers vs warnings), preview, idempotent republish, takedown, centralized learner-visibility gate.
+4. **2.2B — Publishing / Revision Workflow** — **✅ DONE on branch** (2026-08-21, code `85ddb10`; no schema): review
+   (`DRAFT→REVIEW→PUBLISHED→ARCHIVED` + return-to-draft), explicit top-down hierarchy publish, atomic Lesson-serialized
+   publication (old→ARCHIVED, pointer switch, reviewedBy/publishedBy/publishedAt + duration cache), idempotent republish,
+   canonical publish-readiness (hard blockers vs warnings, incl. media), learner-safe preview + shared Markdown learner
+   projection, ONE centralized learner-visibility authority, urgent takedown. TD-250; unit 458→474, e2e 520→538. **Content
+   authoring + publication is end-to-end complete for the text/objective MVP.**
 5. **2.2C — Methodist CMS** (frontend, out of backend scope here).
 6. **2.2D — Bulk Import + Validation** (package → dry-run → DRAFT → review → publish).
 7. **2.2E — English A1 Pilot Content** (tiny, human-authored, end-to-end tested before expansion).
