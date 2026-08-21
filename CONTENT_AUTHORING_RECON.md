@@ -1,9 +1,11 @@
 # Content Authoring / Publishing / Methodist Workflow — Reconnaissance (Phase 2.2A-P)
 
-> Status: **RECON COMPLETE — PASS WITH ARCHITECTURE GAPS (2026-08-21). NO decision is ACCEPTED until owner review.**
-> NO CODE / SCHEMA / MIGRATION / UI / SEED / IMPORT / AI / TD. Payment provider track is PAUSED (no merchant docs /
-> sandbox / credentials) and its completed architecture is untouched. Baseline unchanged: migrations 21, unit 397,
-> e2e 432, CHECK 45, drift clean.
+> **Recon result (2026-08-21): PASS WITH ARCHITECTURE GAPS.** A reconnaissance does not decide — at recon completion NO
+> decision was accepted. **Post-recon owner review (2026-08-21): the content-lifecycle decisions are now ACCEPTED — see
+> §13a.** This document preserves the original recon findings as written; §13a holds the accepted answers, and the
+> stale "OWNER DECISION / OPEN" labels below are annotated "RESOLVED §13a". NO CODE / SCHEMA / MIGRATION / UI / SEED /
+> IMPORT / AI / TD. Payment provider track PAUSED (no merchant docs / sandbox / credentials); completed architecture
+> untouched. Baseline unchanged: migrations 21, unit 397, e2e 432, CHECK 45, drift clean.
 
 ## Headline
 The content **schema** was designed in Phase 1.2/1.3 with a **complete authoring/publishing lifecycle already present**
@@ -57,11 +59,11 @@ deterministic single authority (NOT "latest by updatedAt"). Lesson-start derefer
 (unique per lesson) is the monotonic revision number. Missing: the **atomic publish transaction** that moves the pointer,
 supersedes the prior revision, and stamps `publishedAt/publishedBy` (schema supports it; no service).
 
-## 4. Revision lifecycle (§4/§7) — schema PASS; two owner decisions
-`RevisionStatus` already models DRAFT → REVIEW → PUBLISHED → ARCHIVED. **No `SUPERSEDED`** state (a superseded revision
-would move to `ARCHIVED`) and **no `REJECTED`** state (a rejected review would return to `DRAFT`). Both are **OWNER
-DECISIONS** — reuse ARCHIVED / return-to-DRAFT, or add explicit states. Draft mutability, review-freeze, and
-published/superseded immutability are all service rules (no service yet).
+## 4. Revision lifecycle (§4/§7) — schema PASS (owner decisions RESOLVED post-recon — §13a)
+`RevisionStatus` already models DRAFT → REVIEW → PUBLISHED → ARCHIVED. At recon this raised the question of adding
+`SUPERSEDED`/`REJECTED` states. **RESOLVED §13a: no `SUPERSEDED`/`REJECTED` enum for MVP** — a replaced revision moves to
+`ARCHIVED`, a rejected review returns to `DRAFT`. Draft mutability, review-freeze, and published/archived immutability
+are service rules (no service yet).
 
 ## 5. Runtime version selection (§24/§25/§26/§27/§61/§62) — PASS, already ideal
 | Layer | References | Verdict |
@@ -104,9 +106,11 @@ retroactive rewrite.** The owner's §62 policy is already the implemented behavi
   because `SkillMeasurement` carries only `skillId` (+ lesson/session provenance, not activity/revision), historical
   evidence stays semantically stable and is not invalidated by a new revision.
 - **Prerequisites are Lesson-level** (`LessonPrerequisite`, unique (lesson,prereq)). **Cycle prevention is unimplemented:
-  the init migration has the unique index but NO self-reference CHECK and NO DAG-cycle guard**, and there is no service
-  (the `content.prisma:273` "app + CHECK" note is aspirational). → SERVICE GAP (+ recommend a self-loop CHECK when
-  authoring lands; multi-node cycle validation at write/publish time).
+  the init migration has only the unique index — no self-reference CHECK and no cycle guard**; the `content.prisma:273`
+  "app + CHECK" note is aspirational and, per the owner correction (2026-08-21), **imprecise**. A DB row-level CHECK can
+  enforce **only the self-loop** (`lesson_id <> prerequisite_lesson_id`) — it **cannot** detect a multi-node DAG cycle.
+  **Full DAG cycle prevention belongs to service/transaction validation** at write/publish time, not a DB CHECK. →
+  SCHEMA (self-loop CHECK, DB) + SERVICE (cycle validation).
 - Roadmaps are generated snapshots referencing logical lessons; a changed prerequisite graph should affect **future**
   roadmap generation/replanning only — never retroactive mutation (consistent with current snapshot architecture).
 
@@ -130,8 +134,8 @@ BLOCKED) is a future service check; text-first English MVP need not block on tra
 
 ## 10. Content format / localization / assessment separation
 - **Rich text (§54/§55):** unmodeled at schema level — text lives in `Activity.payload` JSONB (free shape today). Format
-  (Markdown vs structured JSON vs sanitized HTML) is an **OWNER DECISION**; recommend a sanitized structured/Markdown
-  representation (XSS-safe, mobile-portable, math/code-extensible) rather than raw editor HTML.
+  was an OWNER DECISION at recon; **RESOLVED §13a: restricted Markdown** (XSS-safe, mobile-portable, math/code-extensible)
+  — raw HTML is NOT authoring authority. (The schema representation is still to be built.)
 - **Localization (§41):** no locale field — effectively **one authored language per revision**; Uzbek-instruction /
   English-target coexist inside payload content. Translation variants = OPEN/future.
 - **Assessment content (§43):** `AssessmentDefinition/Version/Item` is a **separate domain** (`AssessmentPurposeScope
@@ -143,8 +147,9 @@ BLOCKED) is a future service check; text-first English MVP need not block on tra
 
 ## 11. Bulk import / export / AI (§46–§51)
 - **No import path exists.** Natural keys: Subject.slug, (subject) Track slug, (track) Level code, (subject) Skill code
-  are unique; **Lesson has only a nullable non-unique slug — no stable external import key.** → import idempotency needs a
-  decision (stable per-lesson external code/slug uniqueness or an `externalKey`); title must never be identity.
+  are unique; **Lesson has only a nullable non-unique slug — no stable external import key.** **RESOLVED §13a: a new
+  immutable stable Lesson `contentKey` is the import/business identity; title is not identity.** (Lesson **slug** stays a
+  separate routing/SEO concern — its uniqueness is NOT part of content identity and remains OPEN.)
 - Recommended future import: structured JSON package → validate → dry-run → transactional import → **all DRAFT** →
   human review → publish. Never import into PUBLISHED. Export/backup can reuse the same package format (mark future).
 - **AI (§50/§51):** `Activity.source{HUMAN,AI_GENERATED,AI_ASSISTED}` + `aiMetadata` already model provenance (TD-20
@@ -158,37 +163,61 @@ BLOCKED) is a future service check; text-first English MVP need not block on tra
 | 1 | hierarchy authoring (Subject…Topic) | PASS (schema); SERVICE GAP (no CRUD) |
 | 2 | lesson logical identity | PASS |
 | 3 | revision model | PASS |
-| 4 | revision status enum | PASS (DRAFT/REVIEW/PUBLISHED/ARCHIVED); OWNER DECISION (SUPERSEDED/REJECTED) |
+| 4 | revision status enum | PASS (DRAFT/REVIEW/PUBLISHED/ARCHIVED); RESOLVED §13a (no SUPERSEDED/REJECTED enum — supersede→ARCHIVED, reject→DRAFT) |
 | 5 | revision numbering (`version` unique) | PASS |
 | 6 | published-revision pointer | PASS |
 | 7 | published immutability | PASS (schema/convention); SERVICE GAP (enforce on future writer) |
 | 8 | review workflow | SERVICE GAP (states exist; no workflow) |
-| 9 | publish authority | OWNER DECISION + SERVICE GAP |
+| 9 | publish authority | RESOLVED §13a (content.publish + subject scope; self-publish OK; no ADMIN bypass) + SERVICE GAP |
 | 10 | methodist subject scope | PASS (SubjectAssignment); SERVICE GAP (unwired enforcement) |
 | 11 | learner draft isolation | SERVICE GAP (PUBLISHED gate re-implemented per read path, not centralized) |
 | 12 | activity payload validation | SERVICE GAP (runtime-only, duplicated, no write-time) |
 | 13 | activity type registry | SERVICE GAP (no registry; set copy-pasted ×4) |
 | 14 | ordering (position unique) | PASS; SERVICE GAP (safe reorder endpoint) |
-| 15 | skill lifecycle | PASS (schema); SERVICE GAP; OWNER DECISION (merge/delete) |
+| 15 | skill lifecycle | PASS (schema); SERVICE GAP; RESOLVED §13a (skill merge DEFERRED; measured skills never hard-deleted) |
 | 16 | skill mapping (lesson+activity) | PASS |
-| 17 | prerequisite DAG | SCHEMA GAP (no self/cycle CHECK) + SERVICE GAP (no cycle validation) |
+| 17 | prerequisite DAG | SCHEMA GAP (no self-loop CHECK — DB can only do `lesson_id <> prerequisite_lesson_id`) + SERVICE GAP (full DAG cycle validation is service/transaction-level, not a DB CHECK) |
 | 18 | roadmap version behavior | PASS |
 | 19 | daily-plan version behavior | PASS |
 | 20 | learning-session revision freeze | PASS (pin on progress/attempt) |
 | 21 | historical attempt integrity | PASS |
 | 22 | preview | SERVICE GAP (no draft preview surface) |
-| 23 | urgent takedown | PASS (LessonStatus ARCHIVED + hierarchy gate); SERVICE GAP (no endpoint); OWNER DECISION (HIDDEN vs ARCHIVED) |
-| 24 | archive/delete policy | PASS (Restrict FKs prevent hard-delete of referenced); OWNER DECISION (draft delete) |
-| 25 | rich text | OWNER DECISION (format unmodeled) |
-| 26 | media | PASS (schema); SERVICE GAP (unwired); minor gap (transcript/captions) |
-| 27 | bulk import | SERVICE GAP (none); OWNER DECISION (format) |
-| 28 | import idempotency | SCHEMA GAP (no stable Lesson external key) |
+| 23 | urgent takedown | PASS (LessonStatus ARCHIVED + hierarchy gate); SERVICE GAP (no endpoint); RESOLVED §13a (Lesson ARCHIVED for MVP; no HIDDEN state) |
+| 24 | archive/delete policy | PASS (Restrict FKs prevent hard-delete of referenced); RESOLVED §13a (referenced never hard-deleted; unreferenced DRAFT deletable) |
+| 25 | rich text | RESOLVED §13a (restricted Markdown; raw HTML not authority); schema representation unbuilt |
+| 26 | media | PASS (schema); SERVICE GAP (unwired); transcript/captions DEFERRED §13a |
+| 27 | bulk import | SERVICE GAP (none) — FUTURE (Phase 2.2D); structured-JSON→validate→dry-run→DRAFT is a RECOMMENDED design (not yet an accepted decision); only import IDENTITY is RESOLVED §13a (Lesson.contentKey) |
+| 28 | import idempotency | RESOLVED §13a (immutable Lesson contentKey; title≠identity); SCHEMA GAP (contentKey field built at 2.2A-D) |
 | 29 | audit | PASS (StaffAudit); SERVICE GAP (unwired) |
-| 30 | edit concurrency | OWNER DECISION / SCHEMA-optional (updatedAt exists; no explicit lock/version) |
-| 31 | production seed/content process | OPEN (pilot-first) |
+| 30 | edit concurrency | RESOLVED §13a (updatedAt optimistic concurrency; no dedicated version field) |
+| 31 | production seed/content process | RESOLVED §13a (initial pilot ≈10–20 English A1 lessons); broader production/import operating process = future |
 | 32 | AI authoring boundary | PASS (source/aiMetadata; provenance) |
 
-## 13. Owner decisions required (§75) — none decided here
+## 13a. ACCEPTED OWNER DECISIONS (2026-08-21)
+The 12 decisions surfaced in §13 (and related items) were resolved by the owner on 2026-08-21. These are **ACCEPTED**
+and will be formalized as TDs when Phase 2.2A-D is implemented (no TD assigned in this docs cleanup). Removed from
+OPEN_QUESTIONS accordingly.
+
+- **Revision lifecycle:** `DRAFT → REVIEW → PUBLISHED → ARCHIVED`. Review rejection: `REVIEW → DRAFT`. **No `SUPERSEDED`/
+  `REJECTED` enum for MVP.** A published revision becomes `ARCHIVED` when replaced.
+- **Publish authority:** requires `content.publish` permission **+ subject scope**. **Self-publish allowed for MVP** with
+  correct permission/scope. **No hidden ADMIN bypass.**
+- **Current published revision authority:** `Lesson.publishedRevisionId` (confirmed).
+- **Learner version semantics (ACCEPTED as-is):** Roadmap/DailyPlan hold the **logical lesson**; the exact revision
+  **freezes when the lesson starts**; active/completed learner history stays **pinned**; unstarted execution uses the
+  **current published revision**.
+- **Urgent takedown:** `Lesson` `ARCHIVED` for MVP (revision stays immutable).
+- **Delete:** referenced/published content is **never hard-deleted**; unreferenced `DRAFT` may be deletable.
+- **Hierarchy move:** published content is **not reparented** in MVP — use clone / new logical content where needed.
+- **Rich text:** **restricted Markdown**; raw HTML is **not** authoring authority.
+- **Bulk import identity:** requires an **immutable stable Lesson `contentKey`**; title is **not** identity.
+- **Edit concurrency:** `updatedAt` **optimistic concurrency** for MVP.
+- **Prerequisites:** DB CHECK enforces **only** the self-loop (`lesson_id <> prerequisite_lesson_id`); **full DAG cycle
+  prevention is service/transaction validation** (a DB CHECK cannot enforce it).
+- **Deferred:** skill merge; media transcript/captions.
+- **Production content pilot:** ≈ **10–20 English A1 lessons** first.
+
+## 13. Owner decisions (§75) — RESOLVED 2026-08-21 (see §13a above for the accepted answers)
 1. Revision lifecycle: add `SUPERSEDED`/`REJECTED`, or reuse `ARCHIVED` + return-to-DRAFT?
 2. Who may publish (own-subject methodist self-publish vs required reviewer vs `content.publish` permission)?
 3. Author self-publish allowed for a small team (permission + review state + audit, same person)?
@@ -202,14 +231,22 @@ BLOCKED) is a future service check; text-first English MVP need not block on tra
 11. Optimistic editing concurrency (updatedAt check vs explicit version/lock).
 12. Production content pilot size (recommend tiny A1 pilot before bulk).
 
-## 14. Recommended implementation sequence (§76) — subject to owner review
-1. **2.2A-D — Content Lifecycle / Schema Hardening**: self/cycle prerequisite CHECK; Lesson external-key + slug
-   uniqueness decision; optional revision concurrency field; SUPERSEDED/REJECTED decision; media transcript/captions if
-   accepted. (One migration; schema-only.)
+## 14. Recommended implementation sequence (§76) — subject to owner phase prompt
+1. **2.2A-D — Content Lifecycle / Schema Hardening** (minimal, schema-only): exactly two schema changes —
+   (a) a **LessonPrerequisite self-loop DB CHECK** (`lesson_id <> prerequisite_lesson_id`), and (b) an **immutable stable
+   Lesson `contentKey`** (import/business identity; title is not identity; Lesson slug stays a separate routing/SEO
+   concern, not content identity). It **documents** the accepted contracts below but does **not** implement their
+   service-layer enforcement: **full-DAG cycle prevention** (a DB CHECK cannot detect a multi-node cycle) → Phase 2.2A;
+   **`updatedAt` optimistic-concurrency enforcement** → Phase 2.2A; **revision-lifecycle enforcement**
+   (`DRAFT→REVIEW→PUBLISHED→ARCHIVED`, reject→DRAFT) → authoring/publishing phases. **Not built** (accepted §13a):
+   SUPERSEDED/REJECTED states, a dedicated concurrency version column, media transcript/captions (deferred). (One
+   migration; schema-only.)
 2. **2.2A-R — Canonical Activity Registry + Shared Payload Validator**: single source of truth (type → schema → scoring →
    renderer flags) replacing the duplicated parsers/sets; used by runtime AND future authoring. (Refactor; behavior-preserving.)
 3. **2.2A — Content Authoring Backend**: subject-scoped CRUD for hierarchy + lessons + draft revisions + activities +
-   skills + prereqs; SubjectAssignment enforcement; content permission codes; StaffAudit wiring; write-time validation.
+   skills + prereqs; SubjectAssignment enforcement; content permission codes; StaffAudit wiring; write-time validation;
+   **full-DAG prerequisite cycle prevention** (service/transaction validation, where prerequisite writers exist); and
+   **`updatedAt` optimistic-concurrency enforcement** in the update/write services.
 4. **2.2B — Publishing / Revision Workflow**: atomic publish transaction (pointer move + supersede + publishedAt/By),
    publish validation (hard blockers vs warnings), preview, idempotent republish, takedown, centralized learner-visibility gate.
 5. **2.2C — Methodist CMS** (frontend, out of backend scope here).
@@ -218,4 +255,5 @@ BLOCKED) is a future service check; text-first English MVP need not block on tra
 
 ## 15. Baseline & boundary
 No repository modification this phase (recon only). Baseline: migrations 21, unit 397, e2e 432, total 829, CHECK 45,
-drift clean. Payment provider track PAUSED and untouched. No TD added; no lifecycle decision marked ACCEPTED.
+drift clean. Payment provider track PAUSED and untouched. (Recon itself added no TD. **Update 2026-08-21:** the owner
+accepted the content-lifecycle decisions — see §13a; they will be formalized as TDs when Phase 2.2A-D is implemented.)
