@@ -6,13 +6,14 @@
 ## Repository pointers (verified 2026-08-21)
 | Repo | Role | Branch | HEAD SHA (at verification) | Working tree |
 |---|---|---|---|---|
-| `zeten-nz/izlan` | code / schema / migrations / tests | `phase/2.2A-1` | `2b03b572770c99d4265b45213d8eff8d7cce3c53` (base `main` `8ef8205`) | clean |
+| `zeten-nz/izlan` | code / schema / migrations / tests | `phase/2.2A-1` | `abea1c48e88701b6ac4ae9af670c326976328ef6` (base `main` `8ef8205`; owner-review correction on `2b03b57`) | clean |
 | `zeten-nz/izla-docs` | product/architecture decisions, checkpoints | `phase/2.2A-1` | base `main` `1331b05` | clean |
 
 \* Phase **2.2A-1** (content authoring backend — Part 1: authorization + subject scope + hierarchy + logical Lesson)
 implemented on branch `phase/2.2A-1` — izlan base `main` @ `8ef8205` (which merged the 2.2A-R registry PR #3); docs base
-`main` @ `1331b05` (which merged the 2.2A-R docs, PR #6). **Code SHA `2b03b57`** is this phase's implementation; izlan
-`main` stays `8ef8205` until the PR merges. The Baseline below reflects the `phase/2.2A-1` branch state, OWNER REVIEW PENDING.
+`main` @ `1331b05` (which merged the 2.2A-R docs, PR #6). **Code SHA `abea1c4`** is this phase's implementation (owner-review
+correction on `2b03b57`); izlan `main` stays `8ef8205` until the PR merges. The Baseline below reflects the `phase/2.2A-1`
+branch state, OWNER REVIEW PENDING.
 
 > **Governance note:** before the 2026-08-21 workflow adoption, historical phases were committed coarsely to `main` and
 > do **not** have per-phase SHAs or phase branches — they are all contained in code `19461eb` / docs `92cadce`
@@ -20,14 +21,15 @@ implemented on branch `phase/2.2A-1` — izlan base `main` @ `8ef8205` (which me
 
 ## Current position
 - **Last completed:** Phase **2.2A-1** — Content Authoring Backend, Part 1 (authorization + subject scope + hierarchy +
-  logical Lesson). Result: PASS — **complete on branch `phase/2.2A-1` (code `2b03b57`), OWNER REVIEW PENDING (not merged)**.
-  Staff-only `/api/staff/content` authoring: permissions `content.author` (author inside a Subject — requires
-  `SubjectAssignment`) + `content.subject.manage` (create Subjects + manage assignments), seeded idempotently by the
-  bootstrap (no role-name bypass); DB-resolved SubjectAssignment scope on every child mutation (IDOR-safe not-found);
+  logical Lesson). Result: PASS — **complete on branch `phase/2.2A-1` (code `abea1c4`), OWNER REVIEW PENDING (not merged)**.
+  Staff-only `/api/staff/content` authoring: permissions `content.author` (author child content inside a Subject —
+  requires `SubjectAssignment`) + `content.subject.manage` (global: create Subjects, **Subject metadata PATCH**, and
+  manage assignments), seeded idempotently by the bootstrap (no role-name bypass); DB-resolved SubjectAssignment scope on
+  every child mutation, **resolved + checked inside the mutation transaction** (IDOR-safe not-found);
   Subject/Track/Level/Module/Topic + logical Lesson CRUD subset; DRAFT-only mutation; `createdBy` always the principal;
-  `Lesson.contentKey` writer immutability; `updatedAt` optimistic concurrency; StaffAudit written in the same transaction
-  as each mutation; accepted DRAFT Lesson→Topic move. No Prisma schema/migration change. TD-247 added. See
-  [checkpoints/2.2A-1.md](checkpoints/2.2A-1.md).
+  `Lesson.contentKey` writer immutability; **PATCH null-on-required rejected 400**; `updatedAt` optimistic concurrency;
+  StaffAudit written in the same transaction as each mutation (**audit-failure rollback proven**); accepted DRAFT
+  Lesson→Topic move. No Prisma schema/migration change. TD-247 added. See [checkpoints/2.2A-1.md](checkpoints/2.2A-1.md).
   (Prior: 2.2A-R Activity registry — [checkpoints/2.2A-R.md](checkpoints/2.2A-R.md); 2.2A-D content schema hardening —
   [checkpoints/2.2A-D.md](checkpoints/2.2A-D.md); 2.2T-P Telegram recon — [TELEGRAM_INTEGRATION_RECON.md](TELEGRAM_INTEGRATION_RECON.md).)
 - **Telegram integration:** **architecture CANDIDATE — NOT STARTED**, not approved for implementation. Recon found the
@@ -57,13 +59,13 @@ implemented on branch `phase/2.2A-1` — izlan base `main` @ `8ef8205` (which me
 - **Workflow:** the two-repo phase/checkpoint/SHA workflow is adopted (rules in `izlan/CLAUDE.md`).
 - **No future phase is marked complete.** No implementation phase starts until the owner supplies its specific prompt.
 
-## Baseline (phase/2.2A-1 @ `2b03b57`; izlan `main` still `8ef8205` until the PR merges)
+## Baseline (phase/2.2A-1 @ `abea1c4`; izlan `main` still `8ef8205` until the PR merges)
 | Metric | Value |
 |---|---|
 | migrations | 22 (last: `20260821110000_content_schema_hardening`; **no new migration in 2.2A-1**) |
 | unit tests | 423 (2.2A-1 +6: content-authoring permissions/bootstrap AUTH-01..05,07) |
-| e2e tests | 466 (2.2A-1 +30: content-authoring CA-01..34 + AUTH-03..06 bootstrap) |
-| total tests | 889 |
+| e2e tests | 472 (2.2A-1 +36: content-authoring CA-01..34 + REV-01..06 + AUTH-03..06 bootstrap) |
+| total tests | 895 |
 | named CHECK constraints | 46 (unchanged) |
 | drift | clean (empty diff on izlan_dev + izlan_test) |
 

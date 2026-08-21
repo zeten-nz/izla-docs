@@ -258,7 +258,7 @@ implemented there; TD-246 is the separate 2.2A-R Activity-registry decision). Re
    objective payload authority + a neutral shared choice-question primitive (AssessmentItem stays a separate contract).
    TD-246; unit 397→417; e2e 436 unchanged; migrations 22 / CHECK 46. Write-time/authoring validation consuming it → 2.2A.
 3. **2.2A — Content Authoring Backend** (sliced):
-   - **2.2A-1 — ✅ DONE on branch** (2026-08-21, code `2b03b57`; behavior-additive, no schema): subject-scoped
+   - **2.2A-1 — ✅ DONE on branch** (2026-08-21, code `abea1c4`; behavior-additive, no schema): subject-scoped
      Subject/Track/Level/Module/Topic + **logical Lesson** CRUD subset under `/api/staff/content`; content permission
      codes (`content.author`, `content.subject.manage`) + idempotent bootstrap defaults; **SubjectAssignment
      enforcement** (no role-name bypass); **StaffAudit wiring** (same-transaction); **`updatedAt` optimistic-concurrency
