@@ -98,6 +98,13 @@ retroactive rewrite.** The owner's §62 policy is already the implemented behavi
 - **answerKey** lives server-only inside payload JSONB and is stripped from learner projections (no leak).
 - → **The single most important CMS prerequisite: a shared canonical Activity-type registry + payload validator** (one
   source of truth) used by BOTH publish-time authoring AND learner runtime, replacing the duplicated parsers/sets.
+  - **✅ RUNTIME SIDE IMPLEMENTED Phase 2.2A-R** (2026-08-21, code `bd83c99`): canonical
+    `src/content/activity/activity-registry.ts` now owns objective/view-only/unsupported classification (the copy-pasted
+    `new Set([...])` are gone); a neutral shared choice-question primitive
+    (`src/common/payload/choice-question-payload.ts`) backs BOTH `parseObjectiveActivityPayload` and `parseItemPayload`
+    without merging the two domain contracts (`lesson-activity-objective/v1` vs `placement-item/v1` stay distinct).
+    View-only payload shapes remain undefined (payloadContract = NONE_DEFINED). **Write-time/authoring validation is still
+    NOT built — it is the 2.2A authoring backend that will consume this registry.** (TD-246.)
 
 ## 7. Skills & prerequisites (§20/§21/§22/§23) 
 - **Skill** is subject-scoped (`SkillStatus ACTIVE/ARCHIVED`), unique by (subject,name) and (subject,code); referenced by
@@ -171,8 +178,8 @@ BLOCKED) is a future service check; text-first English MVP need not block on tra
 | 9 | publish authority | RESOLVED §13a (content.publish + subject scope; self-publish OK; no ADMIN bypass) + SERVICE GAP |
 | 10 | methodist subject scope | PASS (SubjectAssignment); SERVICE GAP (unwired enforcement) |
 | 11 | learner draft isolation | SERVICE GAP (PUBLISHED gate re-implemented per read path, not centralized) |
-| 12 | activity payload validation | SERVICE GAP (runtime-only, duplicated, no write-time) |
-| 13 | activity type registry | SERVICE GAP (no registry; set copy-pasted ×4) |
+| 12 | activity payload validation | runtime parsers DE-DUPLICATED via shared primitive (2.2A-R); WRITE-TIME/authoring validation still SERVICE GAP → 2.2A |
+| 13 | activity type registry | ✅ IMPLEMENTED 2.2A-R (canonical `activity-registry.ts`; set no longer copy-pasted; exhaustiveness-tested) |
 | 14 | ordering (position unique) | PASS; SERVICE GAP (safe reorder endpoint) |
 | 15 | skill lifecycle | PASS (schema); SERVICE GAP; RESOLVED §13a (skill merge DEFERRED; measured skills never hard-deleted) |
 | 16 | skill mapping (lesson+activity) | PASS |
@@ -242,8 +249,10 @@ OPEN_QUESTIONS accordingly.
    (`DRAFT→REVIEW→PUBLISHED→ARCHIVED`, reject→DRAFT) → authoring/publishing phases. **Not built** (accepted §13a):
    SUPERSEDED/REJECTED states, a dedicated concurrency version column, media transcript/captions (deferred). (One
    migration; schema-only.)
-2. **2.2A-R — Canonical Activity Registry + Shared Payload Validator**: single source of truth (type → schema → scoring →
-   renderer flags) replacing the duplicated parsers/sets; used by runtime AND future authoring. (Refactor; behavior-preserving.)
+2. **2.2A-R — Canonical Activity Registry + Shared Payload Validator** — **✅ DONE on branch** (2026-08-21, code `bd83c99`;
+   behavior-preserving refactor, no schema): single runtime source of truth for Activity classification + one Lesson
+   objective payload authority + a neutral shared choice-question primitive (AssessmentItem stays a separate contract).
+   TD-246; unit 397→417; e2e 436 unchanged; migrations 22 / CHECK 46. Write-time/authoring validation consuming it → 2.2A.
 3. **2.2A — Content Authoring Backend**: subject-scoped CRUD for hierarchy + lessons + draft revisions + activities +
    skills + prereqs; SubjectAssignment enforcement; content permission codes; StaffAudit wiring; write-time validation;
    **full-DAG prerequisite cycle prevention** (service/transaction validation, where prerequisite writers exist); and
