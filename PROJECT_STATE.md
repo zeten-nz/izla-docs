@@ -6,7 +6,7 @@
 ## Repository pointers (verified 2026-08-21)
 | Repo | Role | Branch | HEAD SHA (at verification) | Working tree |
 |---|---|---|---|---|
-| `zeten-nz/izlan` | code / schema / migrations / tests | `phase/2.2B` | `85ddb107d0c7d32e8433c578acd8c0e7f46aae5b` (base `main` `9ebd90a`) | clean |
+| `zeten-nz/izlan` | code / schema / migrations / tests | `phase/2.2B` | `4c7ce7a979fd1658f19edb0dac7f395ca17f219d` (base `main` `9ebd90a`) | clean |
 | `zeten-nz/izla-docs` | product/architecture decisions, checkpoints | `phase/2.2B` | base `main` `4b8b89f` | clean |
 
 \* Phase **2.2B** (review + publishing + preview + readiness + learner visibility) implemented on branch `phase/2.2B` —
@@ -20,15 +20,19 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
 
 ## Current position
 - **Last completed:** Phase **2.2B** — Review + Publishing + Preview + Readiness + Learner Visibility. Result: PASS —
-  **complete on branch `phase/2.2B` (code `85ddb10`), OWNER REVIEW PENDING (not merged)**. `content.publish` + MVP
+  **complete on branch `phase/2.2B` (code `4c7ce7a`), OWNER REVIEW PENDING (not merged)**. `content.publish` + MVP
   self-publish; explicit top-down hierarchy publication; revision `DRAFT→REVIEW→PUBLISHED→ARCHIVED` (+ REVIEW→DRAFT return
   with audited reason); **atomic publication** serialized on the Lesson row (`FOR UPDATE`) — old current revision
   ARCHIVED, new PUBLISHED (reviewedBy/publishedBy/publishedAt + duration cache), `Lesson.publishedRevisionId` moved, one
   transaction with audit; **idempotent republish**; concurrent inverse publishes cannot both win. Canonical
-  publish-readiness (parent/prerequisite/skill/media blockers + warnings, no secret leak); learner-safe preview + **ONE
-  shared learner projector** (objective answerKey stripped; TEXT/EXPLANATION/EXAMPLE Markdown; media metadata-only);
-  **ONE centralized visibility authority** (full Subject→Topic + pointer coherence) reconciling roadmap + LessonExecution;
-  urgent Lesson takedown removes access without deleting history. No schema/migration. TD-250 added. See
+  publish-readiness (parent/prerequisite/prerequisite-subject/skill/media blockers + warnings, no secret leak); learner-safe
+  preview + **ONE shared learner projector** (objective answerKey stripped; TEXT/EXPLANATION/EXAMPLE Markdown; media
+  metadata-only); **ONE centralized visibility authority** (full Subject→Topic + pointer coherence) reconciling roadmap +
+  LessonExecution; urgent Lesson takedown removes access at **every** learner execution + review surface (attempt /
+  view-only / completion / review-session, via the canonical `resumableLessonWhere`) without deleting history. A
+  **final blocker correction** on the same branch closed three safety gaps: takedown execution-access gating,
+  idempotent-republish-after-takedown (now a lifecycle conflict, no silent restore), and same-subject prerequisite
+  revalidation (`PREREQUISITE_SUBJECT_MISMATCH`). No schema/migration. TD-250 added (clarified). See
   [checkpoints/2.2B.md](checkpoints/2.2B.md). (Prior: 2.2A-3 skills/prerequisites — [checkpoints/2.2A-3.md](checkpoints/2.2A-3.md);
   2.2A-2 revision/activity — [checkpoints/2.2A-2.md](checkpoints/2.2A-2.md); 2.2A-1 authz/hierarchy — [checkpoints/2.2A-1.md](checkpoints/2.2A-1.md).)
 - **Telegram integration:** **architecture CANDIDATE — NOT STARTED**, not approved for implementation. Recon found the
@@ -60,12 +64,12 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
 - **Workflow:** the two-repo phase/checkpoint/SHA workflow is adopted (rules in `izlan/CLAUDE.md`).
 - **No future phase is marked complete.** No implementation phase starts until the owner supplies its specific prompt.
 
-## Baseline (phase/2.2B @ `85ddb10`; izlan `main` still `9ebd90a` until the PR merges)
+## Baseline (phase/2.2B @ `4c7ce7a`; izlan `main` still `9ebd90a` until the PR merges)
 | Metric | Value |
 |---|---|
 | migrations | 22 (last: `20260821110000_content_schema_hardening`; **no new migration in 2.2B**) |
 | unit tests | 474 (2.2B +16: visibility VIS-01..08, learner projection, registry AR-09) |
-| e2e tests | 538 (2.2B +18: PB/RW/PUB/RD/MR/PV/VIS + concurrent publish + audit rollback + takedown) |
+| e2e tests | 542 (2.2B +22: PB/RW/PUB/RD/MR/PV/VIS + concurrent publish + audit rollback + takedown; blocker correction +4: TD-01..07 execution takedown, RS-TD-01..03 review-session takedown, REP-TD-01 republish-after-takedown, PREREQ-SUBJECT cross-subject) |
 | total tests | 1012 |
 | named CHECK constraints | 46 (unchanged) |
 | drift | clean (empty diff on izlan_dev + izlan_test) |

@@ -542,15 +542,24 @@ Profile/onboarding foundation ([LEARNER_ONBOARDING_IMPLEMENTATION.md](LEARNER_ON
   the old current revision (PUBLISHED → ARCHIVED, coherence-checked), stamp the new revision (PUBLISHED + reviewedBy +
   publishedBy + publishedAt + duration cache), move the Lesson pointer + status, StaffAudit — no externally visible
   intermediate state. Two concurrent REVIEW revisions of the same Lesson cannot both state-change publish (loser 409).
-- **Idempotent republish:** re-publishing the ALREADY-current coherent revision is a success no-op (no status/timestamp
-  change, no second audit) even with now-stale tokens; a stale token for a DIFFERENT actual publication still 409s;
-  publishing an ARCHIVED or non-current-PUBLISHED revision is invalid.
+- **Idempotent republish:** a success no-op is allowed ONLY when the revision is the FULLY-coherent current publication —
+  `Lesson.status = PUBLISHED` **and** `Revision.status = PUBLISHED` **and** `Lesson.publishedRevisionId = revisionId`
+  **and** `Revision.lessonId = Lesson.id` (no status/timestamp change, no second audit, even with now-stale tokens). A
+  stale token for a DIFFERENT actual publication still 409s; publishing an ARCHIVED or non-current-PUBLISHED revision is
+  invalid. Because an urgent takedown leaves the pointer + Revision PUBLISHED but sets `Lesson.status = ARCHIVED`, the
+  idempotent branch (which is checked before `Lesson.status`) must include the Lesson-PUBLISHED clause, else it would
+  wrongly report success and silently "restore" access — so republish-after-takedown instead fails with a lifecycle
+  conflict resolved BEFORE any OCC token comparison (no restore, no timestamp change, no audit).
 - **Readiness (canonical, metadata-only):** review blockers = zero activities / non-`0..N-1` positions / unauthorable type
   / invalid payload (registry + authoring dispatcher; no duplicated type lists) / ActivitySkill→archived skill. Publish
-  blockers add parent-not-PUBLISHED, Lesson-ARCHIVED, prerequisite-not-PUBLISHED, LessonSkill→archived skill, media
-  readiness (IMAGE/AUDIO require a ready, non-BLOCKED, MIME-matching ActivityMedia→MediaAsset; UNREVIEWED = warning), and
-  current-pointer coherence. Warnings: no LessonSkill, objective without ActivitySkill, DURATION_INCOMPLETE. Never leaks
-  payload/answerKey/markdown/storageKey. Media identity stays relational; media delivery remains out of scope.
+  blockers add parent-not-PUBLISHED, Lesson-ARCHIVED, prerequisite-not-PUBLISHED, **prerequisite-subject-mismatch**
+  (source-Subject ≠ prerequisite-Subject — the schema does not encode same-subject, so readiness is the final safety gate:
+  it resolves the source Lesson's Subject and each prerequisite Lesson's Subject via their own hierarchies and reports only
+  the safe `PREREQUISITE_SUBJECT_MISMATCH` code + `prerequisite` scope, never foreign Subject/Lesson identity),
+  LessonSkill→archived skill, media readiness (IMAGE/AUDIO require a ready, non-BLOCKED, MIME-matching
+  ActivityMedia→MediaAsset; UNREVIEWED = warning), and current-pointer coherence. Warnings: no LessonSkill, objective
+  without ActivitySkill, DURATION_INCOMPLETE. Never leaks payload/answerKey/markdown/storageKey. Media identity stays
+  relational; media delivery remains out of scope.
 - **Learner projection & visibility:** ONE shared learner-safe Activity projector (registry `learnerProjection`) used by
   BOTH staff preview and LessonExecution — objective answerKey stripped; TEXT/EXPLANATION/EXAMPLE → validated markdown
   body (MARKDOWN_SAFE); IMAGE/AUDIO metadata-only; never storageKey. ONE canonical visibility authority requiring the
@@ -559,8 +568,19 @@ Profile/onboarding foundation ([LEARNER_ONBOARDING_IMPLEMENTATION.md](LEARNER_ON
   at Level).
 - **History & takedown:** a replacement keeps the old PUBLISHED revision as ARCHIVED history — a pinned learner keeps
   resuming the OLD pinned revision (never repinned); a NEW learner pins the new current revision. Urgent **takedown**
-  (`Lesson.status = ARCHIVED`, audited reason) removes learner access (new start + resume + roadmap eligibility) WITHOUT
-  moving the pointer, archiving the revision, or deleting progress/completion/attempt history. No Prisma schema/migration change.
+  (`Lesson.status = ARCHIVED`, audited reason) removes learner access WITHOUT moving the pointer, archiving the revision,
+  or deleting progress/completion/attempt history. The replacement-vs-takedown distinction is the ONE canonical
+  `resumableLessonWhere(...)` predicate (Lesson + full Subject→Topic PUBLISHED; the pinned revision MAY be ARCHIVED and is
+  NOT required to equal the current `publishedRevisionId`): replacement keeps the Lesson PUBLISHED so the predicate still
+  holds (old pinned learner continues); takedown fails it (learner stops). Every learner execution surface reuses that ONE
+  predicate as its gate, evaluated BEFORE any idempotent replay / attempt create / step / signal / mission / completion /
+  review work — execution attempt + resume, `markViewOnlyStep` + `completeLesson`, and review-session
+  start/getSession/submitAttempt/complete (getSession stays 404-safe; no session/attempt is deleted, cancelled, or
+  repinned). No Prisma schema/migration change.
+- **CLARIFICATION (2.2B blocker correction, same phase — no new TD):** the three points above (idempotent-republish
+  Lesson-PUBLISHED clause, `PREREQUISITE_SUBJECT_MISMATCH` readiness gate, and takedown gating every learner execution +
+  review surface via `resumableLessonWhere`) refine — but do not change — the accepted TD-250 semantics; they close
+  publication/takedown safety gaps found in owner review. Still no schema/migration.
 - **Status:** ACCEPTED (implemented Phase 2.2B)
 
 > Bu hujjat D-04'dagi "hali tanlanmagan" ro'yxatini bosqichma-bosqich yopib boradi.
