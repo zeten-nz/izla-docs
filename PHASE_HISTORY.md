@@ -52,7 +52,8 @@
   to [CONTENT_AUTHORING_RECON.md](CONTENT_AUTHORING_RECON.md) §13a. Historical phases remain `pre-per-phase-SHA`
   (all in code `19461eb`); no old SHA was fabricated. Complete SHA-bearing checkpoints (from the next phase on) are not
   duplicated here — they live in [checkpoints/](checkpoints/).
-- **Content-lifecycle decisions ACCEPTED** 2026-08-21 (§13a of the recon doc); to be formalized as TDs at Phase 2.2A-D.
+- **Content-lifecycle decisions accepted 2026-08-21** (§13a of the recon doc) and subsequently **formalized as TD-240..245
+  in Phase 2.2A-D**.
 - **Telegram** is an architecture candidate only (not approved). **Phase 2.2T-P recon COMPLETE** (2026-08-21, code
   inspected @ `281ca415`, runtime unchanged) — see [TELEGRAM_INTEGRATION_RECON.md](TELEGRAM_INTEGRATION_RECON.md) +
   [checkpoints/2.2T-P.md](checkpoints/2.2T-P.md); **12 owner decisions** in [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) §3, plus

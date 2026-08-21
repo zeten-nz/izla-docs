@@ -117,7 +117,8 @@ retroactive rewrite.** The owner's §62 policy is already the implemented behavi
   "app + CHECK" note is aspirational and, per the owner correction (2026-08-21), **imprecise**. A DB row-level CHECK can
   enforce **only the self-loop** (`lesson_id <> prerequisite_lesson_id`) — it **cannot** detect a multi-node DAG cycle.
   **Full DAG cycle prevention belongs to service/transaction validation** at write/publish time, not a DB CHECK. →
-  SCHEMA (self-loop CHECK, DB) + SERVICE (cycle validation).
+  self-loop CHECK IMPLEMENTED 2.2A-D (`chk_lesson_prerequisite_no_self_loop`); SERVICE (full multi-node DAG cycle
+  validation) → 2.2A.
 - Roadmaps are generated snapshots referencing logical lessons; a changed prerequisite graph should affect **future**
   roadmap generation/replanning only — never retroactive mutation (consistent with current snapshot architecture).
 
@@ -154,9 +155,11 @@ BLOCKED) is a future service check; text-first English MVP need not block on tra
 
 ## 11. Bulk import / export / AI (§46–§51)
 - **No import path exists.** Natural keys: Subject.slug, (subject) Track slug, (track) Level code, (subject) Skill code
-  are unique; **Lesson has only a nullable non-unique slug — no stable external import key.** **RESOLVED §13a: a new
-  immutable stable Lesson `contentKey` is the import/business identity; title is not identity.** (Lesson **slug** stays a
-  separate routing/SEO concern — its uniqueness is NOT part of content identity and remains OPEN.)
+  are unique. **At recon time:** Lesson had only a nullable non-unique slug and **no stable external import key**.
+  **Post-recon implementation:** Phase **2.2A-D** added the accepted immutable stable `Lesson.contentKey` (NOT NULL +
+  globally UNIQUE) as the import/business identity (RESOLVED §13a; **title is not identity**). Lesson **slug** stays a
+  separate routing/SEO concern — its uniqueness is NOT part of content identity and remains OPEN. The **import format**
+  itself is still future/recommended (see below) → 2.2D.
 - Recommended future import: structured JSON package → validate → dry-run → transactional import → **all DRAFT** →
   human review → publish. Never import into PUBLISHED. Export/backup can reuse the same package format (mark future).
 - **AI (§50/§51):** `Activity.source{HUMAN,AI_GENERATED,AI_ASSISTED}` + `aiMetadata` already model provenance (TD-20
@@ -183,7 +186,7 @@ BLOCKED) is a future service check; text-first English MVP need not block on tra
 | 14 | ordering (position unique) | PASS; SERVICE GAP (safe reorder endpoint) |
 | 15 | skill lifecycle | PASS (schema); SERVICE GAP; RESOLVED §13a (skill merge DEFERRED; measured skills never hard-deleted) |
 | 16 | skill mapping (lesson+activity) | PASS |
-| 17 | prerequisite DAG | SCHEMA GAP (no self-loop CHECK — DB can only do `lesson_id <> prerequisite_lesson_id`) + SERVICE GAP (full DAG cycle validation is service/transaction-level, not a DB CHECK) |
+| 17 | prerequisite DAG | DB self-loop CHECK IMPLEMENTED 2.2A-D (`chk_lesson_prerequisite_no_self_loop`, `lesson_id <> prerequisite_lesson_id`); SERVICE GAP: full multi-node DAG cycle (A→B→C→A) validation → 2.2A (service/transaction-level; a row CHECK cannot detect it) |
 | 18 | roadmap version behavior | PASS |
 | 19 | daily-plan version behavior | PASS |
 | 20 | learning-session revision freeze | PASS (pin on progress/attempt) |
@@ -194,16 +197,16 @@ BLOCKED) is a future service check; text-first English MVP need not block on tra
 | 25 | rich text | RESOLVED §13a (restricted Markdown; raw HTML not authority); schema representation unbuilt |
 | 26 | media | PASS (schema); SERVICE GAP (unwired); transcript/captions DEFERRED §13a |
 | 27 | bulk import | SERVICE GAP (none) — FUTURE (Phase 2.2D); structured-JSON→validate→dry-run→DRAFT is a RECOMMENDED design (not yet an accepted decision); only import IDENTITY is RESOLVED §13a (Lesson.contentKey) |
-| 28 | import idempotency | RESOLVED §13a (immutable Lesson contentKey; title≠identity); SCHEMA GAP (contentKey field built at 2.2A-D) |
+| 28 | import idempotency | Identity substrate IMPLEMENTED 2.2A-D (`Lesson.contentKey` NOT NULL + globally UNIQUE); bulk-import/idempotency integration (use of `contentKey` by an actual importer) remains FUTURE → 2.2D |
 | 29 | audit | PASS (StaffAudit); SERVICE GAP (unwired) |
 | 30 | edit concurrency | RESOLVED §13a (updatedAt optimistic concurrency; no dedicated version field) |
 | 31 | production seed/content process | RESOLVED §13a (initial pilot ≈10–20 English A1 lessons); broader production/import operating process = future |
 | 32 | AI authoring boundary | PASS (source/aiMetadata; provenance) |
 
 ## 13a. ACCEPTED OWNER DECISIONS (2026-08-21)
-The 12 decisions surfaced in §13 (and related items) were resolved by the owner on 2026-08-21. These are **ACCEPTED**
-and will be formalized as TDs when Phase 2.2A-D is implemented (no TD assigned in this docs cleanup). Removed from
-OPEN_QUESTIONS accordingly.
+The 12 decisions surfaced in §13 (and related items) were resolved by the owner on 2026-08-21. These are **ACCEPTED**.
+They were subsequently formalized as **TD-240..245** during Phase 2.2A-D (`contentKey` + prerequisite self-loop CHECK
+implemented there; TD-246 is the separate 2.2A-R Activity-registry decision). Removed from OPEN_QUESTIONS accordingly.
 
 - **Revision lifecycle:** `DRAFT → REVIEW → PUBLISHED → ARCHIVED`. Review rejection: `REVIEW → DRAFT`. **No `SUPERSEDED`/
   `REJECTED` enum for MVP.** A published revision becomes `ARCHIVED` when replaced.
@@ -266,4 +269,4 @@ OPEN_QUESTIONS accordingly.
 ## 15. Baseline & boundary
 No repository modification this phase (recon only). Baseline: migrations 21, unit 397, e2e 432, total 829, CHECK 45,
 drift clean. Payment provider track PAUSED and untouched. (Recon itself added no TD. **Update 2026-08-21:** the owner
-accepted the content-lifecycle decisions — see §13a; they will be formalized as TDs when Phase 2.2A-D is implemented.)
+accepted the content-lifecycle decisions — see §13a; they were subsequently formalized as **TD-240..245** in Phase 2.2A-D.)

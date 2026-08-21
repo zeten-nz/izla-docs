@@ -14,9 +14,9 @@ izlan base `main` @ `2e1c9e32` (which merged the 2.2A-D content-schema-hardening
 (which merged the 2.2A-D docs, PR #5). **Code SHA `bd83c99`** is this phase's implementation; izlan `main` stays
 `2e1c9e32` until the PR merges. The Baseline below reflects the `phase/2.2A-R` branch state, OWNER REVIEW PENDING.
 
-> **Governance note:** phases before 2026-08-21 were committed coarsely to `main` (izlan has only 2 commits total,
-> izla-docs 3). There are **no per-phase SHAs or phase branches for historical phases** — they are all contained in
-> code `19461eb` / docs `92cadce`. Per-phase SHA recording + `phase/<id>` branches begin now.
+> **Governance note:** before the 2026-08-21 workflow adoption, historical phases were committed coarsely to `main` and
+> do **not** have per-phase SHAs or phase branches — they are all contained in code `19461eb` / docs `92cadce`
+> (historical authority). Per-phase branch/SHA recording begins with the adopted workflow.
 
 ## Current position
 - **Last completed:** Phase **2.2A-R** — Canonical Activity Registry + Shared Payload Validation (IMPLEMENTATION,
