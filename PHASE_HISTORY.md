@@ -14,6 +14,7 @@
 | 2.2T-P | Telegram integration architecture recon (NO CODE) | PASS w/ gaps | 21 | 397 | 432 | `281ca415` | `phase/2.2T-P` (final SHA in checkpoint/PR) | [2.2T-P.md](checkpoints/2.2T-P.md) |
 | 2.2A-D | Content lifecycle / schema hardening (Lesson.contentKey + prereq self-loop CHECK) | PASS | 22 | 397 | 436 | `7dec7bff` | `phase/2.2A-D` (SHA in checkpoint/PR) | [2.2A-D.md](checkpoints/2.2A-D.md) |
 | 2.2A-R | Canonical Activity registry + shared payload validation (behavior-preserving refactor; no schema) | PASS | 22 | 417 | 436 | `bd83c99` | `phase/2.2A-R` (SHA in checkpoint/PR) | [2.2A-R.md](checkpoints/2.2A-R.md) |
+| 2.2A-1 | Content authoring backend Part 1 — authz + subject scope + hierarchy + logical Lesson (no schema) | PASS | 22 | 423 | 466 | `2b03b57` | `phase/2.2A-1` (SHA in checkpoint/PR) | [2.2A-1.md](checkpoints/2.2A-1.md) |
 | _next_ | (awaiting owner phase prompt) | — | — | — | — | — | — | — |
 
 ## Historical phases (pre-per-phase-SHA — all in code `19461eb`, docs `92cadce`)
@@ -63,6 +64,13 @@
   decisions formalized as **TD-240..245**. Content authoring application layer still NOT STARTED (next: 2.2A-R).
   **Phase 2.2A-D (content schema hardening) can proceed independently of Telegram.** *(2.2A-D merged to `main`:
   izlan `2e1c9e32`, izla-docs `fecbfad9`.)*
+- **Phase 2.2A-1 COMPLETE on branch** (2026-08-21, code `2b03b57`): content authoring backend Part 1 — staff-only
+  `/api/staff/content` for Subject/Track/Level/Module/Topic + logical Lesson; permissions `content.author` +
+  `content.subject.manage` (idempotent bootstrap defaults, no role-name bypass); SubjectAssignment scope enforcement
+  (IDOR-safe); StaffAudit same-transaction wiring; `updatedAt` optimistic concurrency; `Lesson.contentKey` immutability;
+  DRAFT-only mutation; DRAFT Lesson→Topic move. **No schema/migration** (migrations 22, CHECK 46); unit 417→423 (+6),
+  e2e 436→466 (+30). **TD-247**. LessonRevision/Activity authoring NOT started (next: 2.2A-2).
+  *(2.2A-R merged to `main`: izlan `8ef8205`, izla-docs `1331b05`.)*
 - **Phase 2.2A-R COMPLETE on branch** (2026-08-21, code `bd83c99`): canonical Lesson Activity registry
   (`src/content/activity/activity-registry.ts`) is the one source of truth for objective/view-only/unsupported
   classification (was duplicated across the payload parser, completion eligibility, daily-mission policy/repo,
