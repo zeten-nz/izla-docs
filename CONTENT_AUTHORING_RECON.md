@@ -10,10 +10,14 @@
 ## Headline
 The content **schema** was designed in Phase 1.2/1.3 with a **complete authoring/publishing lifecycle already present**
 (status enums, immutable revisions, published-revision pointer, authorship/review/publish FKs, subject scoping,
-generalized audit, provider-neutral media, AI provenance). The **authoring application layer is entirely unbuilt** — no
-CMS, no content controllers/services/repositories, no content permission codes, no write-time validation. And the
-**learner runtime version-selection already matches the owner's ideal policy (§62 A–E)**. So the work ahead is
-predominantly **service-layer on top of a ready schema**, plus a handful of small schema decisions.
+generalized audit, provider-neutral media, AI provenance). **At recon time, the authoring application layer was entirely
+unbuilt** — no CMS, no content controllers/services/repositories, no content permission codes, no write-time validation.
+**Post-recon: Phase 2.2A-1 implemented the authorization / subject-scope / hierarchy / logical-Lesson slice** (staff
+controllers/services/repositories, `content.author` + `content.subject.manage`, SubjectAssignment enforcement, StaffAudit
+wiring, optimistic concurrency); **revision/activity authoring, skills/prerequisites, publishing/review, CMS, and bulk
+import remain future** as listed below. And the **learner runtime version-selection already matches the owner's ideal
+policy (§62 A–E)**. So the work ahead is predominantly **service-layer on top of a ready schema**, plus a handful of small
+schema decisions.
 
 ---
 
@@ -34,11 +38,11 @@ predominantly **service-layer on top of a ready schema**, plus a handful of smal
 | Activity | uuid7 | — (revision owns lifecycle) | `position` | source HUMAN/AI_*, aiMetadata | — | (lessonRevisionId,position) | AUTHORING-READY |
 | Skill | uuid7 | `SkillStatus` ACTIVE/ARCHIVED | sortOrder | — | — | (subjectId,name),(subjectId,code) | AUTHORING-READY |
 | LessonSkill / ActivitySkill | uuid7 | — | — | — | — | (lesson,skill)/(activity,skill) | AUTHORING-READY |
-| LessonPrerequisite | uuid7 | — | — | — | — | (lesson,prereq) | MISSING LIFECYCLE (no cycle/self CHECK) |
+| LessonPrerequisite | uuid7 | — | — | — | — | (lesson,prereq) | self-loop DB CHECK IMPLEMENTED 2.2A-D (`chk_lesson_prerequisite_no_self_loop`); full multi-node DAG (A→B→C→A) prevention = SERVICE GAP → 2.2A-3 |
 | MediaAsset | uuid7 | processing PENDING/READY/FAILED + moderation UNREVIEWED/APPROVED/BLOCKED | — | uploadedBy | — | storageKey unique | AUTHORING-READY (no transcript/captions) |
 | ActivityMedia | uuid7 | — | position | — | — | (activity,asset), asset onDelete Restrict | AUTHORING-READY |
-| SubjectAssignment | uuid7 | — | — | assignedBy? | — | (userId,subjectId) | AUTHORING-READY (unwired) |
-| StaffAudit | uuid7 | — | — | actorUserId | — | — | AUTHORING-READY (unwired) |
+| SubjectAssignment | uuid7 | — | — | assignedBy? | — | (userId,subjectId) | WIRED 2.2A-1 (scope authority + manage endpoints) |
+| StaffAudit | uuid7 | — | — | actorUserId | — | — | WIRED 2.2A-1 (same-transaction audit for authoring mutations) |
 
 **Enums:** `ContainerStatus{DRAFT,PUBLISHED,ARCHIVED}`, `LessonStatus{DRAFT,PUBLISHED,ARCHIVED}`,
 `RevisionStatus{DRAFT,REVIEW,PUBLISHED,ARCHIVED}`, `SkillStatus{ACTIVE,ARCHIVED}`, `ContentSource{HUMAN,AI_GENERATED,AI_ASSISTED}`,
@@ -135,6 +139,15 @@ retroactive rewrite.** The owner's §62 policy is already the implemented behavi
 - **`StaffAudit`** (actorUserId, actionCode, targetType/targetId, reason, metadata) exists, **unwired** — reuse for
   publish/archive/skill/prereq/import actions (no event-sourcing needed).
 
+> **POST-RECON CURRENT STATUS (Phase 2.2A-1, code `abea1c4`).** The three bullets above describe the state **at recon
+> time**. Implemented in 2.2A-1: permission codes `content.author` + `content.subject.manage` registered; explicit
+> **role→permission bootstrap** (METHODIST=author, ADMIN=author+manage, LEARNER/MODERATOR=none) — idempotent, additive,
+> **no ADMIN role-name bypass**; **SubjectAssignment enforcement** for child content (Subject resolved from DB, checked
+> inside the mutation transaction, IDOR-safe); **StaffAudit wiring** for 2.2A-1 mutations (Subject/assignment/Track/Level/
+> Module/Topic/Lesson create+update+move), written in the same transaction (audit-failure rolls the mutation back).
+> **Still future:** revision/activity authoring audits (2.2A-2), skill/prerequisite audits (2.2A-3), publish/review audits
+> (2.2B), import audits (2.2D).
+
 ## 9. Media (§39/§40) — schema PASS, unwired
 `MediaAsset` is provider-neutral (`storageKey`, not URL), with independent processing + moderation axes; activities
 reference it **relationally** via `ActivityMedia` (Restrict), never by id inside JSONB. **No** `transcript`/`captions`/
@@ -171,7 +184,7 @@ BLOCKED) is a future service check; text-first English MVP need not block on tra
 ## 12. Gap classification (§74/§80)
 | # | Area | Status |
 |--|--|--|
-| 1 | hierarchy authoring (Subject…Topic) | PASS (schema); SERVICE GAP (no CRUD) |
+| 1 | hierarchy authoring (Subject…Topic) | PASS (schema); Subject/Track/Level/Module/Topic + **logical Lesson** CRUD subset IMPLEMENTED 2.2A-1 (`/api/staff/content`, DRAFT-only, audited); LessonRevision/Activity authoring still SERVICE GAP → 2.2A-2 |
 | 2 | lesson logical identity | PASS |
 | 3 | revision model | PASS |
 | 4 | revision status enum | PASS (DRAFT/REVIEW/PUBLISHED/ARCHIVED); RESOLVED §13a (no SUPERSEDED/REJECTED enum — supersede→ARCHIVED, reject→DRAFT) |
@@ -180,7 +193,7 @@ BLOCKED) is a future service check; text-first English MVP need not block on tra
 | 7 | published immutability | PASS (schema/convention); SERVICE GAP (enforce on future writer) |
 | 8 | review workflow | SERVICE GAP (states exist; no workflow) |
 | 9 | publish authority | RESOLVED §13a (content.publish + subject scope; self-publish OK; no ADMIN bypass) + SERVICE GAP |
-| 10 | methodist subject scope | PASS (SubjectAssignment); SERVICE GAP (unwired enforcement) |
+| 10 | methodist subject scope | PASS (SubjectAssignment); **enforcement IMPLEMENTED 2.2A-1** (content.author + DB-resolved SubjectAssignment on every child mutation; IDOR-safe not-found; no role-name bypass; TD-247) |
 | 11 | learner draft isolation | SERVICE GAP (PUBLISHED gate re-implemented per read path, not centralized) |
 | 12 | activity payload validation | runtime parsers DE-DUPLICATED via shared primitive (2.2A-R); WRITE-TIME/authoring validation still SERVICE GAP → 2.2A |
 | 13 | activity type registry | ✅ IMPLEMENTED 2.2A-R (canonical `activity-registry.ts`; set no longer copy-pasted; exhaustiveness-tested) |
@@ -199,8 +212,8 @@ BLOCKED) is a future service check; text-first English MVP need not block on tra
 | 26 | media | PASS (schema); SERVICE GAP (unwired); transcript/captions DEFERRED §13a |
 | 27 | bulk import | SERVICE GAP (none) — FUTURE (Phase 2.2D); structured-JSON→validate→dry-run→DRAFT is a RECOMMENDED design (not yet an accepted decision); only import IDENTITY is RESOLVED §13a (Lesson.contentKey) |
 | 28 | import idempotency | Identity substrate IMPLEMENTED 2.2A-D (`Lesson.contentKey` NOT NULL + globally UNIQUE); bulk-import/idempotency integration (use of `contentKey` by an actual importer) remains FUTURE → 2.2D |
-| 29 | audit | PASS (StaffAudit); SERVICE GAP (unwired) |
-| 30 | edit concurrency | RESOLVED §13a (updatedAt optimistic concurrency; no dedicated version field) |
+| 29 | audit | PASS (StaffAudit); **wiring IMPLEMENTED 2.2A-1** for this slice's mutations (same-transaction audit; rejected writes → no audit; TD-247); other domains' mutations still to be wired incrementally |
+| 30 | edit concurrency | RESOLVED §13a; **IMPLEMENTED 2.2A-1** (updatedAt conditional optimistic concurrency on every authoring PATCH/move; stale → CONTENT_EDIT_CONFLICT; no version column; TD-247) |
 | 31 | production seed/content process | RESOLVED §13a (initial pilot ≈10–20 English A1 lessons); broader production/import operating process = future |
 | 32 | AI authoring boundary | PASS (source/aiMetadata; provenance) |
 
@@ -257,10 +270,16 @@ implemented there; TD-246 is the separate 2.2A-R Activity-registry decision). Re
    behavior-preserving refactor, no schema): single runtime source of truth for Activity classification + one Lesson
    objective payload authority + a neutral shared choice-question primitive (AssessmentItem stays a separate contract).
    TD-246; unit 397→417; e2e 436 unchanged; migrations 22 / CHECK 46. Write-time/authoring validation consuming it → 2.2A.
-3. **2.2A — Content Authoring Backend**: subject-scoped CRUD for hierarchy + lessons + draft revisions + activities +
-   skills + prereqs; SubjectAssignment enforcement; content permission codes; StaffAudit wiring; write-time validation;
-   **full-DAG prerequisite cycle prevention** (service/transaction validation, where prerequisite writers exist); and
-   **`updatedAt` optimistic-concurrency enforcement** in the update/write services.
+3. **2.2A — Content Authoring Backend** (sliced):
+   - **2.2A-1 — ✅ DONE on branch** (2026-08-21, code `abea1c4`; behavior-additive, no schema): subject-scoped
+     Subject/Track/Level/Module/Topic + **logical Lesson** CRUD subset under `/api/staff/content`; content permission
+     codes (`content.author`, `content.subject.manage`) + idempotent bootstrap defaults; **SubjectAssignment
+     enforcement** (no role-name bypass); **StaffAudit wiring** (same-transaction); **`updatedAt` optimistic-concurrency
+     enforcement**; `Lesson.contentKey` writer immutability; DRAFT-only mutation; accepted DRAFT Lesson→Topic move. TD-247.
+   - **2.2A-2 — pending**: draft LessonRevision + Activity authoring + Activity payload contract closure (consuming the
+     2.2A-R registry for write-time validation).
+   - **2.2A-3 — pending**: LessonSkill/ActivitySkill writers + prerequisite writer + **full-DAG prerequisite cycle
+     prevention** (transactional, building on the 2.2A-D self-loop CHECK).
 4. **2.2B — Publishing / Revision Workflow**: atomic publish transaction (pointer move + supersede + publishedAt/By),
    publish validation (hard blockers vs warnings), preview, idempotent republish, takedown, centralized learner-visibility gate.
 5. **2.2C — Methodist CMS** (frontend, out of backend scope here).
