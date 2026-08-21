@@ -6,23 +6,25 @@
 ## Repository pointers (verified 2026-08-21)
 | Repo | Role | Branch | HEAD SHA (at verification) | Working tree |
 |---|---|---|---|---|
-| `zeten-nz/izlan` | code / schema / migrations / tests | `main` | `281ca4159e3bfe08ce9bb1e6a26f865f04cd5017` | clean |
-| `zeten-nz/izla-docs` | product/architecture decisions, checkpoints | `main` | `db8dfdbc92e66d2c73952cb92797a3e2cbb19a5d` | clean |
+| `zeten-nz/izlan` | code / schema / migrations / tests | `phase/2.2A-D` | `7dec7bff4880fefbbb9698fd222b174a702977bd` (base `main` `281ca415`) | clean |
+| `zeten-nz/izla-docs` | product/architecture decisions, checkpoints | `phase/2.2A-D` | base `main` `86ebc313` | clean |
 
-\* Inspected for the **2.2T-P Telegram recon**: **izlan `main` @ `281ca415`** — this differs from `19461eb` only by
-`CLAUDE.md` (workflow rules, PR #1 merged), so the **runtime code/schema/tests are unchanged** and `281ca415` is the
-current verified code↔docs match. This recon runs on docs branch `phase/2.2T-P` (off docs `main` @ `db8dfdbc`, which
-merged the OPEN_QUESTIONS cleanup, PR #3) and advances docs `main` after merge.
+\* Phase **2.2A-D** (content schema hardening) implemented on branch `phase/2.2A-D` — izlan base `main` @ `281ca415`;
+docs base `main` @ `86ebc313` (which merged the 2.2T-P recon, PR #4). **Code SHA `7dec7bff`** is this phase's
+implementation; izlan `main` stays `281ca415` until the PR merges. The Baseline below reflects the `phase/2.2A-D` branch
+state, OWNER REVIEW PENDING.
 
 > **Governance note:** phases before 2026-08-21 were committed coarsely to `main` (izlan has only 2 commits total,
 > izla-docs 3). There are **no per-phase SHAs or phase branches for historical phases** — they are all contained in
 > code `19461eb` / docs `92cadce`. Per-phase SHA recording + `phase/<id>` branches begin now.
 
 ## Current position
-- **Last completed:** Phase **2.2T-P** — Telegram Integration Architecture Reconnaissance (NO CODE). Result: PASS WITH
-  ARCHITECTURE GAPS — **recon complete on branch `phase/2.2T-P`, OWNER REVIEW PENDING (not merged)**. See
-  [TELEGRAM_INTEGRATION_RECON.md](TELEGRAM_INTEGRATION_RECON.md) + [checkpoints/2.2T-P.md](checkpoints/2.2T-P.md).
-  (Prior recon: 2.2A-P content authoring — [CONTENT_AUTHORING_RECON.md](CONTENT_AUTHORING_RECON.md).)
+- **Last completed:** Phase **2.2A-D** — Content Lifecycle / Schema Hardening (IMPLEMENTATION). Result: PASS —
+  **complete on branch `phase/2.2A-D` (code `7dec7bff`), OWNER REVIEW PENDING (not merged)**. Two schema changes:
+  `Lesson.contentKey` (immutable business/import identity, NOT NULL + UNIQUE) + `lesson_prerequisite` self-loop CHECK
+  (`chk_lesson_prerequisite_no_self_loop`). See [checkpoints/2.2A-D.md](checkpoints/2.2A-D.md). TDs 240–245 formalized.
+  (Prior recon: 2.2T-P Telegram — [TELEGRAM_INTEGRATION_RECON.md](TELEGRAM_INTEGRATION_RECON.md); 2.2A-P content —
+  [CONTENT_AUTHORING_RECON.md](CONTENT_AUTHORING_RECON.md).)
 - **Telegram integration:** **architecture CANDIDATE — NOT STARTED**, not approved for implementation. Recon found the
   codebase is already identity-agnostic under the phone layer; a generic `UserIdentity` + nullable phone (Option B) is
   recommended — but there is a **cross-surface identity verification gate** (a technical external-contract fact, **NOT an
@@ -31,23 +33,24 @@ merged the OPEN_QUESTIONS cleanup, PR #3) and advances docs `main` after merge.
   converge-onto-Izlan-session invariant only), and a pre-existing suspension-revocation gap.
   **12 owner decisions surfaced (none accepted)** plus those technical gates — [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) §3 /
   recon §16 & §16a.
-- **Content implementation: NOT STARTED** — the schema models the full authoring/publishing lifecycle, but no CMS /
-  authoring backend / content permissions exist yet. The content-lifecycle decisions are **ACCEPTED** (2026-08-21,
-  [CONTENT_AUTHORING_RECON.md](CONTENT_AUTHORING_RECON.md) §13a); **Phase 2.2A-D can proceed independently of Telegram.**
+- **Content schema hardening: DONE** (2.2A-D) — `Lesson.contentKey` + prerequisite self-loop CHECK. **Content authoring
+  application layer is still NOT STARTED** (no CMS / authoring backend / permissions / publish workflow / Activity
+  registry / import). Accepted content-lifecycle decisions are formalized as **TD-240..245**
+  ([CONTENT_AUTHORING_RECON.md](CONTENT_AUTHORING_RECON.md) §13a). Content track was independent of Telegram.
 - **Payment provider track:** **PAUSED** (no CLICK/Payme merchant application, merchant docs, sandbox, or test
   credentials). Completed payment architecture is intact and must not be modified. (Telegram Stars is a *future*
   PaymentProvider behind the existing boundary — it does not resume the CLICK/Payme track.)
 - **Workflow:** the two-repo phase/checkpoint/SHA workflow is adopted (rules in `izlan/CLAUDE.md`).
 - **No future phase is marked complete.** No implementation phase starts until the owner supplies its specific prompt.
 
-## Baseline (izlan @ 281ca415 — runtime unchanged from 19461eb; only CLAUDE.md added)
+## Baseline (phase/2.2A-D @ `7dec7bff`; izlan `main` still `281ca415` until the PR merges)
 | Metric | Value |
 |---|---|
-| migrations | 21 (last: `20260821100000_real_provider_protocol_persistence`) |
+| migrations | 22 (last: `20260821110000_content_schema_hardening`) |
 | unit tests | 397 |
-| e2e tests | 432 |
-| total tests | 829 |
-| named CHECK constraints | 45 |
+| e2e tests | 436 |
+| total tests | 833 |
+| named CHECK constraints | 46 |
 | drift | clean (empty diff on izlan_dev + izlan_test) |
 
 ## What is implemented (high level)
@@ -72,10 +75,9 @@ merged the OPEN_QUESTIONS cleanup, PR #3) and advances docs `main` after merge.
 is now an implementation step, not a blocker.)
 
 ## Recommended next build step (subject to owner prompt)
-Phase **2.2A-D** — Content Lifecycle / Schema Hardening (**minimal, schema-only**): exactly two schema changes — a
-**LessonPrerequisite self-loop CHECK** (`lesson_id <> prerequisite_lesson_id`) and an **immutable stable Lesson
-`contentKey`** (import/business identity; title is not identity — Lesson **slug** stays a separate routing/SEO concern,
-NOT content identity and NOT part of this hardening). Service-layer enforcement of the accepted contracts —
-**full-DAG cycle prevention** and **`updatedAt` optimistic-concurrency** — belongs to **Phase 2.2A** (Content Authoring
-Backend), not 2.2A-D; **bulk-import format/infrastructure** is **Phase 2.2D**. Decisions are accepted (§13a); **do NOT
-start without the owner's phase prompt.**
+Phase **2.2A-R** — Canonical Activity Registry + Shared Payload Validator: a single source of truth
+(type → schema → scoring → renderer flags) replacing the runtime-only, duplicated objective-activity parsers/sets,
+usable by both learner runtime AND the future authoring layer (behavior-preserving refactor). After that: `2.2A`
+Content Authoring Backend (subject-scoped CRUD + permissions + StaffAudit + write-time validation + full-DAG cycle
+prevention + `updatedAt` optimistic-concurrency enforcement), `2.2B` publishing workflow, `2.2C` CMS, `2.2D` bulk
+import, `2.2E` English A1 pilot. **Do NOT start without the owner's phase prompt.**

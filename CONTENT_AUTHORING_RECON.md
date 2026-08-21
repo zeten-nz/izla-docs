@@ -232,7 +232,8 @@ OPEN_QUESTIONS accordingly.
 12. Production content pilot size (recommend tiny A1 pilot before bulk).
 
 ## 14. Recommended implementation sequence (§76) — subject to owner phase prompt
-1. **2.2A-D — Content Lifecycle / Schema Hardening** (minimal, schema-only): exactly two schema changes —
+1. **2.2A-D — Content Lifecycle / Schema Hardening** — ✅ **IMPLEMENTED 2026-08-21** (migration 22; `Lesson.contentKey`
+   + `chk_lesson_prerequisite_no_self_loop`; formalized TD-240..245; checkpoints/2.2A-D.md). Scope was minimal, schema-only — exactly two schema changes —
    (a) a **LessonPrerequisite self-loop DB CHECK** (`lesson_id <> prerequisite_lesson_id`), and (b) an **immutable stable
    Lesson `contentKey`** (import/business identity; title is not identity; Lesson slug stays a separate routing/SEO
    concern, not content identity). It **documents** the accepted contracts below but does **not** implement their
