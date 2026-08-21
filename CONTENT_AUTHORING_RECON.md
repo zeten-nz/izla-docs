@@ -281,7 +281,8 @@ implemented there; TD-246 is the separate 2.2A-R Activity-registry decision). Re
    - **2.2A-2 — ✅ DONE on branch** (2026-08-21, code `d9d5435`; no schema): draft LessonRevision + Activity authoring
      (read/create/update/delete/atomic-reorder; DRAFT revision = concurrency aggregate) + closed payload contracts
      (objective/markdown/media via one registry-driven dispatcher; unsupported not authorable); learner runtime unchanged;
-     StaffAudit never stores payload/answerKey. TD-248; unit 423→445, e2e 472→498.
+     StaffAudit never stores payload/answerKey; OCC tokens hardened to strictly advance ≥1ms (TIMESTAMP(3)). TD-248;
+     unit 423→449, e2e 472→499 (code `e716bd2`).
    - **2.2A-3 — pending**: LessonSkill/ActivitySkill writers + prerequisite writer + **full-DAG prerequisite cycle
      prevention** (transactional, building on the 2.2A-D self-loop CHECK).
 4. **2.2B — Publishing / Revision Workflow**: atomic publish transaction (pointer move + supersede + publishedAt/By),

@@ -491,6 +491,15 @@ Profile/onboarding foundation ([LEARNER_ONBOARDING_IMPLEMENTATION.md](LEARNER_ON
   runtime is UNCHANGED (still strips answerKey, view-only stays metadata-only). StaffAudit stores only safe metadata
   (ids, activityType, position, schemaVersion, changed field names) — never payload/markdown/answerKey; payloads are never
   logged. **No Prisma schema/migration change.**
+- **OCC token precision (2.2A-2 review clarification — applies to TD-247 writers too):** the optimistic-concurrency
+  token is the row's `updatedAt`, stored as PostgreSQL **TIMESTAMP(3)** (millisecond precision). Every content-authoring
+  conditional writer (Subject/Track/Level/Module/Topic/Lesson update + lesson move, and revision update + the revision
+  aggregate `touch`) now **explicitly** sets `updatedAt = max(now, expected + 1ms)` in the SAME conditional `updateMany`
+  (one DB write, inside the existing transaction) so a successful write **strictly advances** the token
+  (`new updatedAt > expected`) even at the same-millisecond boundary or if the wall clock moved backward — closing a
+  theoretical stale-token re-use at TIMESTAMP(3) precision. No version column / lock / extra write. Proven by a
+  deterministic same-millisecond test (freeze `Date.now()` to the stored token's exact ms). This hardens the
+  already-accepted TD-247 concurrency contract; it is not a new decision.
 - **Status:** ACCEPTED (implemented Phase 2.2A-2)
 
 > Bu hujjat D-04'dagi "hali tanlanmagan" ro'yxatini bosqichma-bosqich yopib boradi.

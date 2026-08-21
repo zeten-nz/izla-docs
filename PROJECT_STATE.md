@@ -6,12 +6,12 @@
 ## Repository pointers (verified 2026-08-21)
 | Repo | Role | Branch | HEAD SHA (at verification) | Working tree |
 |---|---|---|---|---|
-| `zeten-nz/izlan` | code / schema / migrations / tests | `phase/2.2A-2` | `d9d54359172c95154596e20531f035bde125f935` (base `main` `57b319c`) | clean |
+| `zeten-nz/izlan` | code / schema / migrations / tests | `phase/2.2A-2` | `e716bd25b3bf28335b2ce56460c87dbfc8ab85b1` (base `main` `57b319c`; OCC hardening on `d9d5435`) | clean |
 | `zeten-nz/izla-docs` | product/architecture decisions, checkpoints | `phase/2.2A-2` | base `main` `3c6ab39` | clean |
 
 \* Phase **2.2A-2** (draft LessonRevision + Activity authoring + payload contract closure) implemented on branch
 `phase/2.2A-2` — izlan base `main` @ `57b319c` (which merged the 2.2A-1 PR #4); docs base `main` @ `3c6ab39` (which merged
-the 2.2A-1 docs, PR #7). **Code SHA `d9d5435`** is this phase's implementation; izlan `main` stays `57b319c` until the PR
+the 2.2A-1 docs, PR #7). **Code SHA `e716bd2`** is this phase's implementation (OCC hardening on `d9d5435`); izlan `main` stays `57b319c` until the PR
 merges. The Baseline below reflects the `phase/2.2A-2` branch state, OWNER REVIEW PENDING.
 
 > **Governance note:** before the 2026-08-21 workflow adoption, historical phases were committed coarsely to `main` and
@@ -20,7 +20,7 @@ merges. The Baseline below reflects the `phase/2.2A-2` branch state, OWNER REVIE
 
 ## Current position
 - **Last completed:** Phase **2.2A-2** — Draft LessonRevision + Activity authoring + payload contract closure. Result:
-  PASS — **complete on branch `phase/2.2A-2` (code `d9d5435`), OWNER REVIEW PENDING (not merged)**. Staff `/api/staff/content`
+  PASS — **complete on branch `phase/2.2A-2` (code `e716bd2`), OWNER REVIEW PENDING (not merged)**. Staff `/api/staff/content`
   now authors a complete DRAFT content body: LessonRevision read/create/update (version = backend max+1, bounded-retry;
   multiple DRAFT revisions allowed; DRAFT-only mutable; parent Lesson DRAFT-or-PUBLISHED) + Activity read/create/update/
   delete/atomic-reorder, with the **DRAFT revision as the concurrency aggregate** (`expectedRevisionUpdatedAt`). Closed
@@ -58,13 +58,13 @@ merges. The Baseline below reflects the `phase/2.2A-2` branch state, OWNER REVIE
 - **Workflow:** the two-repo phase/checkpoint/SHA workflow is adopted (rules in `izlan/CLAUDE.md`).
 - **No future phase is marked complete.** No implementation phase starts until the owner supplies its specific prompt.
 
-## Baseline (phase/2.2A-2 @ `d9d5435`; izlan `main` still `57b319c` until the PR merges)
+## Baseline (phase/2.2A-2 @ `e716bd2`; izlan `main` still `57b319c` until the PR merges)
 | Metric | Value |
 |---|---|
 | migrations | 22 (last: `20260821110000_content_schema_hardening`; **no new migration in 2.2A-2**) |
-| unit tests | 445 (2.2A-2 +22: markdown/media/dispatcher validators + registry AR-08) |
-| e2e tests | 498 (2.2A-2 +26: revision/activity CR-01..15 + CA2-01..32) |
-| total tests | 943 |
+| unit tests | 449 (2.2A-2 +26: markdown/media/dispatcher + registry AR-08 + OCC helper OCC-02..04) |
+| e2e tests | 499 (2.2A-2 +27: revision/activity CR-01..15 + CA2-01..32 + OCC-01) |
+| total tests | 948 |
 | named CHECK constraints | 46 (unchanged) |
 | drift | clean (empty diff on izlan_dev + izlan_test) |
 

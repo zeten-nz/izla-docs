@@ -15,7 +15,7 @@
 | 2.2A-D | Content lifecycle / schema hardening (Lesson.contentKey + prereq self-loop CHECK) | PASS | 22 | 397 | 436 | `7dec7bff` | `phase/2.2A-D` (SHA in checkpoint/PR) | [2.2A-D.md](checkpoints/2.2A-D.md) |
 | 2.2A-R | Canonical Activity registry + shared payload validation (behavior-preserving refactor; no schema) | PASS | 22 | 417 | 436 | `bd83c99` | `phase/2.2A-R` (SHA in checkpoint/PR) | [2.2A-R.md](checkpoints/2.2A-R.md) |
 | 2.2A-1 | Content authoring backend Part 1 — authz + subject scope + hierarchy + logical Lesson (no schema; +owner-review hardening) | PASS | 22 | 423 | 472 | `abea1c4` | `phase/2.2A-1` (SHA in checkpoint/PR) | [2.2A-1.md](checkpoints/2.2A-1.md) |
-| 2.2A-2 | Draft LessonRevision + Activity authoring + payload contract closure (objective/markdown/media; no schema) | PASS | 22 | 445 | 498 | `d9d5435` | `phase/2.2A-2` (SHA in checkpoint/PR) | [2.2A-2.md](checkpoints/2.2A-2.md) |
+| 2.2A-2 | Draft LessonRevision + Activity authoring + payload contract closure (objective/markdown/media; no schema; +OCC token hardening) | PASS | 22 | 449 | 499 | `e716bd2` | `phase/2.2A-2` (SHA in checkpoint/PR) | [2.2A-2.md](checkpoints/2.2A-2.md) |
 | _next_ | (awaiting owner phase prompt) | — | — | — | — | — | — | — |
 
 ## Historical phases (pre-per-phase-SHA — all in code `19461eb`, docs `92cadce`)
@@ -65,14 +65,15 @@
   decisions formalized as **TD-240..245**. Content authoring application layer still NOT STARTED (next: 2.2A-R).
   **Phase 2.2A-D (content schema hardening) can proceed independently of Telegram.** *(2.2A-D merged to `main`:
   izlan `2e1c9e32`, izla-docs `fecbfad9`.)*
-- **Phase 2.2A-2 COMPLETE on branch** (2026-08-21, code `d9d5435`): draft LessonRevision + Activity authoring —
+- **Phase 2.2A-2 COMPLETE on branch** (2026-08-21, code `e716bd2`; OCC token hardening on `d9d5435`): draft LessonRevision + Activity authoring —
   `/api/staff/content` revision read/create/update (backend version max+1, bounded-retry; DRAFT-only mutable; parent Lesson
   DRAFT-or-PUBLISHED) + Activity read/create/update/delete/atomic-reorder with the DRAFT revision as concurrency aggregate
   (`expectedRevisionUpdatedAt`); closed authoring payload contracts `lesson-activity-objective/v1` (reuses canonical parser),
   `lesson-activity-markdown/v1` (TEXT/EXPLANATION/EXAMPLE, no rawHtml), `lesson-activity-media/v1` (IMAGE/AUDIO marker,
   relational media); unsupported types not authorable; one registry-driven dispatcher; StaffAudit never stores
-  payload/answerKey; **learner runtime UNCHANGED**. No schema/migration (migrations 22, CHECK 46); unit 423→445, e2e 472→498.
-  **TD-248**. Next: 2.2A-3 (skills + prerequisites + DAG). *(2.2A-1 merged to `main`: izlan `57b319c`, izla-docs `3c6ab39`.)*
+  payload/answerKey; **learner runtime UNCHANGED**. OCC tokens hardened to strictly advance ≥1ms at TIMESTAMP(3) precision.
+  No schema/migration (migrations 22, CHECK 46); unit 423→449, e2e 472→499. **TD-248**. Next: 2.2A-3 (skills + prerequisites
+  + DAG). *(2.2A-1 merged to `main`: izlan `57b319c`, izla-docs `3c6ab39`.)*
 - **Phase 2.2A-1 COMPLETE on branch** (2026-08-21, code `abea1c4`; owner-review hardening on `2b03b57`): content authoring
   backend Part 1 — staff-only `/api/staff/content` for Subject/Track/Level/Module/Topic + logical Lesson; permissions
   `content.author` + `content.subject.manage` (idempotent bootstrap defaults, no role-name bypass); **Subject metadata PATCH
