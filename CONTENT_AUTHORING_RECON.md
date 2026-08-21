@@ -10,10 +10,14 @@
 ## Headline
 The content **schema** was designed in Phase 1.2/1.3 with a **complete authoring/publishing lifecycle already present**
 (status enums, immutable revisions, published-revision pointer, authorship/review/publish FKs, subject scoping,
-generalized audit, provider-neutral media, AI provenance). The **authoring application layer is entirely unbuilt** — no
-CMS, no content controllers/services/repositories, no content permission codes, no write-time validation. And the
-**learner runtime version-selection already matches the owner's ideal policy (§62 A–E)**. So the work ahead is
-predominantly **service-layer on top of a ready schema**, plus a handful of small schema decisions.
+generalized audit, provider-neutral media, AI provenance). **At recon time, the authoring application layer was entirely
+unbuilt** — no CMS, no content controllers/services/repositories, no content permission codes, no write-time validation.
+**Post-recon: Phase 2.2A-1 implemented the authorization / subject-scope / hierarchy / logical-Lesson slice** (staff
+controllers/services/repositories, `content.author` + `content.subject.manage`, SubjectAssignment enforcement, StaffAudit
+wiring, optimistic concurrency); **revision/activity authoring, skills/prerequisites, publishing/review, CMS, and bulk
+import remain future** as listed below. And the **learner runtime version-selection already matches the owner's ideal
+policy (§62 A–E)**. So the work ahead is predominantly **service-layer on top of a ready schema**, plus a handful of small
+schema decisions.
 
 ---
 
@@ -34,7 +38,7 @@ predominantly **service-layer on top of a ready schema**, plus a handful of smal
 | Activity | uuid7 | — (revision owns lifecycle) | `position` | source HUMAN/AI_*, aiMetadata | — | (lessonRevisionId,position) | AUTHORING-READY |
 | Skill | uuid7 | `SkillStatus` ACTIVE/ARCHIVED | sortOrder | — | — | (subjectId,name),(subjectId,code) | AUTHORING-READY |
 | LessonSkill / ActivitySkill | uuid7 | — | — | — | — | (lesson,skill)/(activity,skill) | AUTHORING-READY |
-| LessonPrerequisite | uuid7 | — | — | — | — | (lesson,prereq) | MISSING LIFECYCLE (no cycle/self CHECK) |
+| LessonPrerequisite | uuid7 | — | — | — | — | (lesson,prereq) | self-loop DB CHECK IMPLEMENTED 2.2A-D (`chk_lesson_prerequisite_no_self_loop`); full multi-node DAG (A→B→C→A) prevention = SERVICE GAP → 2.2A-3 |
 | MediaAsset | uuid7 | processing PENDING/READY/FAILED + moderation UNREVIEWED/APPROVED/BLOCKED | — | uploadedBy | — | storageKey unique | AUTHORING-READY (no transcript/captions) |
 | ActivityMedia | uuid7 | — | position | — | — | (activity,asset), asset onDelete Restrict | AUTHORING-READY |
 | SubjectAssignment | uuid7 | — | — | assignedBy? | — | (userId,subjectId) | WIRED 2.2A-1 (scope authority + manage endpoints) |
@@ -134,6 +138,15 @@ retroactive rewrite.** The owner's §62 policy is already the implemented behavi
   filter, never client `subjectId`.
 - **`StaffAudit`** (actorUserId, actionCode, targetType/targetId, reason, metadata) exists, **unwired** — reuse for
   publish/archive/skill/prereq/import actions (no event-sourcing needed).
+
+> **POST-RECON CURRENT STATUS (Phase 2.2A-1, code `abea1c4`).** The three bullets above describe the state **at recon
+> time**. Implemented in 2.2A-1: permission codes `content.author` + `content.subject.manage` registered; explicit
+> **role→permission bootstrap** (METHODIST=author, ADMIN=author+manage, LEARNER/MODERATOR=none) — idempotent, additive,
+> **no ADMIN role-name bypass**; **SubjectAssignment enforcement** for child content (Subject resolved from DB, checked
+> inside the mutation transaction, IDOR-safe); **StaffAudit wiring** for 2.2A-1 mutations (Subject/assignment/Track/Level/
+> Module/Topic/Lesson create+update+move), written in the same transaction (audit-failure rolls the mutation back).
+> **Still future:** revision/activity authoring audits (2.2A-2), skill/prerequisite audits (2.2A-3), publish/review audits
+> (2.2B), import audits (2.2D).
 
 ## 9. Media (§39/§40) — schema PASS, unwired
 `MediaAsset` is provider-neutral (`storageKey`, not URL), with independent processing + moderation axes; activities

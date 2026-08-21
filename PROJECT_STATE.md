@@ -6,7 +6,7 @@
 ## Repository pointers (verified 2026-08-21)
 | Repo | Role | Branch | HEAD SHA (at verification) | Working tree |
 |---|---|---|---|---|
-| `zeten-nz/izlan` | code / schema / migrations / tests | `phase/2.2A-1` | `abea1c48e88701b6ac4ae9af670c326976328ef6` (base `main` `8ef8205`; owner-review correction on `2b03b57`) | clean |
+| `zeten-nz/izlan` | code / schema / migrations / tests | `phase/2.2A-1` | `abea1c48e88701b6ac4ae9af670c326976328ef6` (runtime-approved; base `main` `8ef8205`; correction on `2b03b57`; branch tip `b3d526e` = trailing comment-only reconcile, no behavior change) | clean |
 | `zeten-nz/izla-docs` | product/architecture decisions, checkpoints | `phase/2.2A-1` | base `main` `1331b05` | clean |
 
 \* Phase **2.2A-1** (content authoring backend — Part 1: authorization + subject scope + hierarchy + logical Lesson)
@@ -78,8 +78,14 @@ branch state, OWNER REVIEW PENDING.
   purchase intent, payment execution/verification/finalization + recovery, non-success evidence, reopen/retry + recovery,
   real-provider protocol persistence hardening (Payme verified; CLICK provider-neutral shell under blocker).
 - **Content schema**: full authoring/publishing lifecycle **modeled** (Subject→…→LessonRevision→Activity, publish
-  pointer, revision states, skill/prereq mapping, media, subject scoping, audit) — **but the authoring application layer
-  is not built** (no CMS/controllers/services/permissions). Runtime version-selection already matches the ideal policy.
+  pointer, revision states, skill/prereq mapping, media, subject scoping, audit). Runtime version-selection already
+  matches the ideal policy.
+- **Content authoring application layer: PARTIALLY IMPLEMENTED / STARTED (2.2A-1)** — staff content
+  controllers/services/repositories under `/api/staff/content`; permissions `content.author` + `content.subject.manage`;
+  SubjectAssignment enforcement (child content); Subject/Track/Level/Module/Topic + logical Lesson authoring; StaffAudit
+  mutation wiring; `updatedAt` optimistic concurrency. **Still NOT built:** LessonRevision authoring, Activity authoring +
+  write-time payload validation, Skill-mapping writers, prerequisite writer / full-DAG validation, review/publishing, CMS
+  frontend, bulk import.
   The **canonical Lesson Activity registry** (2.2A-R, `src/content/activity/activity-registry.ts`) is the runtime-side
   classification authority the future authoring backend will validate writes against; view-only Activity payload shapes
   remain undefined (payloadContract = NONE_DEFINED).
