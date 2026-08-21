@@ -11,6 +11,7 @@
 ## SHA-recorded phases (new workflow, 2026-08-21+)
 | Phase | Title | Result | Mig | Unit | E2E | Code SHA | Docs SHA | Checkpoint |
 |---|---|---|---|---|---|---|---|---|
+| 2.2T-P | Telegram integration architecture recon (NO CODE) | PASS w/ gaps | 21 | 397 | 432 | `281ca415` | `phase/2.2T-P` (final SHA in checkpoint/PR) | [2.2T-P.md](checkpoints/2.2T-P.md) |
 | _next_ | (awaiting owner phase prompt) | — | — | — | — | — | — | — |
 
 ## Historical phases (pre-per-phase-SHA — all in code `19461eb`, docs `92cadce`)
@@ -50,4 +51,7 @@
   (all in code `19461eb`); no old SHA was fabricated. Complete SHA-bearing checkpoints (from the next phase on) are not
   duplicated here — they live in [checkpoints/](checkpoints/).
 - **Content-lifecycle decisions ACCEPTED** 2026-08-21 (§13a of the recon doc); to be formalized as TDs at Phase 2.2A-D.
-- **Telegram** is an architecture candidate only (not approved) — see [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) §3.
+- **Telegram** is an architecture candidate only (not approved). **Phase 2.2T-P recon COMPLETE** (2026-08-21, code
+  inspected @ `281ca415`, runtime unchanged) — see [TELEGRAM_INTEGRATION_RECON.md](TELEGRAM_INTEGRATION_RECON.md) +
+  [checkpoints/2.2T-P.md](checkpoints/2.2T-P.md); 12 owner decisions in [OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) §3.
+  **Phase 2.2A-D (content schema hardening) can proceed independently of Telegram.**
