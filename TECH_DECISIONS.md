@@ -665,6 +665,88 @@ longer the ordinary login mechanism. Historical checkpoints are NOT rewritten �
     survive a reset, and a credential change never commits if revocation fails. Password hashing stays outside the tx.
 - **Status:** ACCEPTED (implemented Phase 2.2C)
 
+### TD-253 — Topic-Scoped JSON Bulk Content Import v1 (ACCEPTED, implemented Phase 2.2D)
+The first bulk-authoring pipeline. It exists to let a Methodist load many lessons into an **existing** Topic at once,
+without ever weakening the per-mutation authorization, lifecycle, or DAG invariants the single-item authoring path (TD-247
+..250) already enforces. Detailed living doc: [BULK_IMPORT.md](BULK_IMPORT.md).
+- **Scope is deliberately narrow.** Format v1 = **JSON only**, imported into ONE existing Topic the staff selects. Imported
+  authorities: **Skills, Lessons + one initial LessonRevision v1, Activities, LessonSkill, ActivitySkill, LessonPrerequisite.**
+  HARD out of scope: Subject/Track/Level/Module/Topic creation, CSV/Excel/ZIP, MediaAsset/ActivityMedia/image/audio, remote
+  URLs, auto-publication, REVIEW transitions, bulk update/overwrite/delete, AI imports, a background queue, and any
+  import-history table. **No new learner surface** — everything imports as DRAFT with zero learner visibility.
+- **No schema, no migration.** The import reuses existing tables and domain/repo primitives only. Migrations stay **23**,
+  named CHECK constraints stay **46**. (Had a new table been required, the rule was to STOP with an ARCHITECTURE GAP rather
+  than invent one.)
+- **Document contract.** Root `{ "schemaVersion": "izlan-topic-content/v1", "skills": [...], "lessons": [...] }`, exact
+  version match (unknown → `IMPORT_SCHEMA_UNSUPPORTED`). **Strict shape:** unknown top-level *and* nested fields, wrong
+  types, duplicate `contentKey`s, duplicate skill `code`s, and malformed activity payloads are all rejected
+  (`IMPORT_INVALID_DOCUMENT`). Server-owned fields (`id`/`topicId`/`status`/`createdBy`/timestamps/`publishedRevisionId`/
+  revision `id`/`version`/`reviewedBy`/`publishedBy`/`publishedAt`) are forbidden in the document. Activities carry **no
+  position** field — order is derived `0..N-1` from array order. Every lesson gets exactly ONE revision `version=1
+  status=DRAFT createdBy=actor`; Lesson `status=DRAFT`, `publishedRevisionId=null`. Size limits: JSON body **5 MiB**
+  (Fastify boundary), ≤200 skills, ≤250 lessons, ≤5000 activities, ≤100 skillRefs/lesson, ≤50 skillRefs/activity,
+  ≤50 prereqs/lesson (`IMPORT_LIMIT_EXCEEDED`).
+- **Identity semantics.** Skills are referenced by a **Subject-scoped stable `code`**: an existing ACTIVE skill is reused;
+  a declared code whose name conflicts with an existing skill → `IMPORT_SKILL_CONFLICT`; ARCHIVED → `IMPORT_SKILL_ARCHIVED`;
+  referenced-but-neither-declared-nor-existing → `IMPORT_SKILL_NOT_FOUND` (no cross-Subject lookup). Lessons are keyed by a
+  **create-only global `contentKey`**: an existing key is a HARD `IMPORT_CONTENT_KEY_EXISTS` — import NEVER overwrites or
+  adopts. Only markdown (TEXT/EXPLANATION/EXAMPLE) and objective (MINI_QUESTION/PRACTICE/MASTERY_TEST) activities are
+  supported; every other type → `IMPORT_ACTIVITY_TYPE_UNSUPPORTED`; payloads are validated by the SAME
+  `validateActivityPayloadForAuthoring` the single-item path uses. Prerequisites may reference a new lesson in the same
+  document or an existing same-Subject lesson (DRAFT/PUBLISHED ok, ARCHIVED blocked); a cross-Subject target →
+  `IMPORT_PREREQUISITE_SUBJECT_MISMATCH`.
+- **Two endpoints, one document.** `POST /api/staff/content/topics/:topicId/import/validate` (dry-run plan) and
+  `.../apply` (commit) take the **same** versioned document; there is **no server-side import session**. Both require
+  `content.author` + a `SubjectAssignment` for the Topic's **server-resolved** Subject (Topic→Module→Level→Track→Subject) —
+  no ADMIN bypass, no role-name check, no client-supplied Subject; `content.publish` is NOT required (DRAFT only). An
+  out-of-scope Topic returns **`CONTENT_NOT_FOUND` (404, IDOR-safe)**, never 403.
+- **Apply is atomic and re-validated.** `apply()` re-runs the FULL validation against the current DB inside the transaction
+  (the dry-run is never trusted), takes the **destination Subject row `FOR UPDATE`** — the *same* graph-serialization
+  authority as the 2.2A-3 prerequisite writer, so a concurrent prerequisite write and an import cannot interleave into a
+  cycle — validates the whole existing + proposed edge set for cycles (`IMPORT_PREREQUISITE_CYCLE`), then creates skills +
+  lessons + revisions + activities + mappings + edges and writes **ONE `content.import.apply` StaffAudit**, all-or-nothing.
+  The import service uses domain/repo primitives only — it never calls HTTP or any publication service.
+- **Audit + hash are safe by construction.** The single audit row's metadata is **subjectId / topicId / documentHash /
+  counts only** — never titles, Markdown, payloads, `answerKey`/`correctOptionIds`, the full contentKey array, or the raw
+  document. `documentHash` is a SHA-256 over a canonical stable serialization, returned from both validate and apply for
+  operator correlation; it is **not** an authorization or idempotency token and there is **no** import-batch table.
+- **CMS (izlan/web).** A polished 3-step importer (Fayl tanlash → Tekshirish → Natija) in the Topic workspace, shown only
+  when the user has the author capability for that Topic's Subject. `.json` only, ≤5 MiB, drag-and-drop or picker;
+  **safe `JSON.parse` only — no eval, no HTML render**; the parsed document lives in component memory and is **never**
+  written to localStorage/sessionStorage/IndexedDB. Dry-run first; apply re-runs the server authority (dry-run not trusted)
+  with duplicate-submit protection and no fake progress percentage; the summary/error list never renders `answerKey`.
+  UI i18n = chrome only (uz default / ru / en).
+- **CLARIFICATION (owner-review correction, same phase — no new TD):**
+  - **The 5 MiB ceiling is import-route-only.** The ordinary API keeps the small default JSON body ceiling (**1 MiB**);
+    ONLY the two import routes accept up to 5 MiB, raised as a **native Fastify route `bodyLimit`** via an `onRoute` hook
+    in ONE shared adapter factory (`src/bootstrap/http-adapter.ts`) used by both production and e2e. It is enforced at the
+    Fastify body-parser boundary — an oversized body is refused with **413 before it is buffered or JSON-parsed** (never a
+    post-parse size check, a global limit, a Content-Length-only check, or trust in the frontend file-size check).
+  - **Dry-run rejects every deterministic package-local conflict apply would hit.** The DB enforces both
+    `@@unique([subjectId, code])` and `@@unique([subjectId, name])` for Skills, so validate now rejects two declared
+    Skills that share a normalized **name** (not only a code) — `IMPORT_SKILL_DUPLICATE`. **Duplicate items** inside
+    `skillCodes`, an activity's `skillCodes`, or `prerequisiteContentKeys` are rejected (`IMPORT_INVALID_DOCUMENT`): the
+    strict parser guarantees de-duplicated lists, so silent `Set()` dedup is no longer the public contract and no
+    LessonSkill/ActivitySkill/LessonPrerequisite unique conflict can surface at write time. A **valid=true** dry-run now
+    means no deterministic package-local uniqueness problem remains.
+  - **Prerequisite content keys follow `contentKey` syntax** (`CONTENT_KEY_RE`, ≤200), via a dedicated normalizer distinct
+    from the ≤80 skill-code one — so a valid 120-character `contentKey` is also a valid prerequisite reference.
+  - **Apply persistence is batched/chunked, not row-by-row.** Skills, Lessons, revisions, Activities, LessonSkill,
+    ActivitySkill, and prerequisites are each written with `createMany` / `createManyAndReturn`; ids are correlated by
+    **stable business keys** (skill code, contentKey, lessonId+version, revisionId+position) — never database return
+    ordering. Large junction inserts are **chunked** (1000 rows/insert), all inside the SAME transaction (no partial
+    commit, no queue, no Redis). A bounded 30 s transaction timeout is headroom for a near-limit package, NOT a substitute
+    for batching.
+  - **Aggregate relationship caps** (implementation safety bounds): `maxLessonSkillMappingsTotal = 10 000`,
+    `maxActivitySkillMappingsTotal = 25 000`, `maxPrerequisitesTotal = 10 000`. UNIQUE references are counted after
+    structural validation; exceeding any cap → `IMPORT_LIMIT_EXCEEDED` **before** the write transaction opens. The
+    dry-run summary counts now deterministically match the rows apply writes.
+  - **Authorization order hardening:** apply performs a cheap preliminary Topic→Subject + `SubjectAssignment` check
+    **before** the expensive parse (so an unassigned `content.author` actor cannot make the server deeply validate a large
+    foreign-Topic document), then STILL re-checks authoritatively inside the transaction. No schema/migration; migrations
+    stay 23, CHECK 46.
+- **Status:** ACCEPTED (implemented Phase 2.2D)
+
 > Bu hujjat D-04'dagi "hali tanlanmagan" ro'yxatini bosqichma-bosqich yopib boradi.
 > Faqat haqiqatan qabul qilingan qarorlar ACCEPTED; product tasdig'ini kutayotganlar bu yerda yozilmaydi ([OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) va [AUTH_ARCHITECTURE.md](AUTH_ARCHITECTURE.md) §23).
 

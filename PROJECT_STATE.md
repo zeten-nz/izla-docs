@@ -3,11 +3,11 @@
 > **Mutable.** Represents only the current state and changes every phase. Historical records live in
 > [PHASE_HISTORY.md](PHASE_HISTORY.md) and [checkpoints/](checkpoints/). Adopted 2026-08-21.
 
-## Repository pointers (verified 2026-08-21)
+## Repository pointers (verified 2026-08-22)
 | Repo | Role | Branch | HEAD SHA (at verification) | Working tree |
 |---|---|---|---|---|
-| `zeten-nz/izlan` | code / schema / migrations / tests + `web/` | `phase/2.2C` | `5521aeab41b082208ba3937b2ec00d2c98123b41` (base `main` `14a6d5c`) | clean |
-| `zeten-nz/izla-docs` | product/architecture decisions, checkpoints | `phase/2.2C` | `phase/2.2C` (final SHA in PR) | clean |
+| `zeten-nz/izlan` | code / schema / migrations / tests + `web/` | `phase/2.2D` | `8defe5b97a226d334d046c7152ab3e5f4ff86f0b` (init `1dc5a2c` + correction; base `main` `42d0b79`, which merged 2.2C PR #8) | clean |
+| `zeten-nz/izla-docs` | product/architecture decisions, checkpoints | `phase/2.2D` | `phase/2.2D` (final SHA in PR; base `main` `ad2ca37`, which merged 2.2C docs PR #11) | clean |
 
 \* Phase **2.2B** (review + publishing + preview + readiness + learner visibility) implemented on branch `phase/2.2B` —
 izlan base `main` @ `9ebd90a` (which merged the 2.2A-3 PR #6); docs base `main` @ `4b8b89f` (which merged the 2.2A-3 docs,
@@ -19,8 +19,34 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
 > (historical authority). Per-phase branch/SHA recording begins with the adopted workflow.
 
 ## Current position
-- **Last completed:** Phase **2.2C** — Methodist CMS Web Application. Result: PASS — **complete on branch `phase/2.2C`
-  (code `5521aea`), OWNER REVIEW PENDING (not merged)**. The **first Izlan web app** lives at **`izlan/web`** (Next.js
+- **Last completed:** Phase **2.2D** — Topic-Scoped JSON Bulk Content Import v1. Result: PASS — **complete on branch
+  `phase/2.2D` (code `1dc5a2c`), OWNER REVIEW PENDING (not merged)**. The first bulk-authoring pipeline: local JSON
+  document → strict validation → dry-run plan → human confirmation → **atomic DRAFT import** into an **existing** Topic.
+  Imports Skills (by Subject-scoped `code`, reuse ACTIVE), Lessons (create-only `contentKey`) + one initial LessonRevision
+  (v1), Activities (**markdown + objective only**), LessonSkill/ActivitySkill mappings, and LessonPrerequisite edges — all
+  as DRAFT (`publishedRevisionId=null`, zero learner visibility). Two endpoints
+  (`POST /api/staff/content/topics/:topicId/import/{validate,apply}`) take the **same** versioned
+  `izlan-topic-content/v1` document (no server import session); both require `content.author` + a `SubjectAssignment` for
+  the Topic's **server-resolved** Subject (no ADMIN bypass, no role-name check, no client Subject), out-of-scope Topic →
+  `CONTENT_NOT_FOUND` (404, IDOR-safe), `content.publish` NOT required. **apply()** = ONE all-or-nothing transaction that
+  takes the destination **Subject-row `FOR UPDATE`** (same DAG serialization authority as the 2.2A-3 prerequisite writer),
+  **re-runs full validation against the current DB** (dry-run never trusted), creates everything, and writes **ONE
+  `content.import.apply` StaffAudit** with **safe metadata only** (subjectId/topicId/documentHash/counts — never titles/
+  Markdown/payload/`answerKey`/contentKeys/raw document). `documentHash` = SHA-256 canonical serialization (correlation,
+  **not** authorization). **No Prisma schema change, no migration** (migrations stay **23**, CHECK **46**). The CMS
+  (`izlan/web`) adds a polished 3-step importer ("Import qilish", author-gated) — `.json` only, ≤5 MiB, **safe JSON.parse,
+  no eval/HTML, no localStorage/sessionStorage/IndexedDB persistence, never renders `answerKey`**, dry-run first, apply
+  re-runs the server authority with duplicate-submit protection and no fake progress. An **owner-review correction**
+  (`8defe5b`, same branch, TD-253 clarified — no new TD/schema) hardened three boundaries: the **5 MiB limit is now
+  import-route-only** (ordinary API back to 1 MiB, enforced at the Fastify body-parser boundary via one shared adapter
+  factory); **dry-run now rejects every deterministic package-local conflict** (duplicate declared skill name, duplicate
+  reference-list items, and prerequisite keys correctly following `contentKey` — not skill-code — syntax); and **apply
+  persistence is batched/chunked** (`createMany`/`createManyAndReturn`, stable-key correlation, 1000-row chunks) with new
+  **aggregate relationship caps** (LessonSkill 10k / ActivitySkill 25k / prerequisites 10k) rejected before the write tx.
+  TD-253 added; living doc [BULK_IMPORT.md](BULK_IMPORT.md); see [checkpoints/2.2D.md](checkpoints/2.2D.md). ActivityMedia
+  upload, the English A1 pilot (→ 2.2E), and the learner web app (→ 3.x) remain NOT built.
+- **Prior:** Phase **2.2C** — Methodist CMS Web Application. Result: PASS — **merged to `main` (PR #8, `42d0b79`)**. The
+  **first Izlan web app** lives at **`izlan/web`** (Next.js
   App Router + TypeScript + React + Tailwind), a professional Methodist/Admin content CMS consuming the 2.2A/2.2B staff
   APIs: subject/hierarchy/lesson/revision/activity/skill/prerequisite authoring, readiness, learner preview, and the
   review→publish→takedown workflow. **Auth:** access token **memory-only**, HttpOnly rotating refresh cookie, **single-flight
@@ -43,7 +69,7 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
   [checkpoints/2.2C.md](checkpoints/2.2C.md), [AUTH_ARCHITECTURE.md](AUTH_ARCHITECTURE.md) (amendment banner), and the
   living [METHODIST_CMS.md](METHODIST_CMS.md). ActivityMedia upload, bulk import (→ 2.2D), and the learner web app (→ 3.x)
   are NOT built.
-- **Prior:** Phase **2.2B** — Review + Publishing + Preview + Readiness + Learner Visibility (PASS; `content.publish` +
+- **Earlier:** Phase **2.2B** — Review + Publishing + Preview + Readiness + Learner Visibility (PASS; `content.publish` +
   self-publish, top-down hierarchy publish, atomic Lesson-serialized publication + pointer switch, idempotent republish,
   canonical readiness, centralized visibility, urgent takedown gating every learner surface, `PREREQUISITE_SUBJECT_MISMATCH`).
   See [checkpoints/2.2B.md](checkpoints/2.2B.md). (Earlier: 2.2A-3 [checkpoints/2.2A-3.md](checkpoints/2.2A-3.md); 2.2A-2
@@ -81,16 +107,16 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
 - **Workflow:** the two-repo phase/checkpoint/SHA workflow is adopted (rules in `izlan/CLAUDE.md`).
 - **No future phase is marked complete.** No implementation phase starts until the owner supplies its specific prompt.
 
-## Baseline (phase/2.2C @ `5521aea`; izlan `main` `14a6d5c` until the PR merges)
+## Baseline (phase/2.2D @ `8defe5b`; izlan `main` `42d0b79`)
 | Metric | Value |
 |---|---|
-| migrations | 23 (last: `20260822120000_password_credential`, TD-252; 2.2B/CMS/design added none) |
-| backend unit tests | 479 (2.2C: +5 PWD hasher/policy) |
-| backend e2e tests | 562 (2.2C: CMS-session; auth register/login/reset; demo-seed; +7 RATE-PWD DB limiter; +2 RESET-ATOMIC) |
-| backend total tests | **1041** (479 + 562) |
-| web tests (Vitest) | 42 (WEB-01..14 + I18N-01..06 + UI-A11Y-01..05 + WEB-AUTH-PWD-01..07/DEMO-WEB-01..03 login) |
-| named CHECK constraints | 46 (unchanged) |
-| drift | clean (empty diff on izlan_dev + izlan_test) |
+| migrations | 23 (unchanged; last: `20260822120000_password_credential`, TD-252; 2.2D adds NO schema/migration) |
+| backend unit tests | 488 (2.2D: +5 import-parser, +4 correction) |
+| backend e2e tests | 589 (2.2D: +17 IMP-V/S/A/DAG/AUTH/AUDIT; +10 correction IMP-BODY/IMP-CONSISTENCY/IMP-SCALE) |
+| backend total tests | **1077** (488 + 589) |
+| web tests (Vitest) | 52 (2.2D: +10 WEB-IMP-01..12) |
+| named CHECK constraints | 46 (unchanged; no schema change) |
+| drift | clean (empty diff / exit 0 on izlan_dev + izlan_test) |
 | web app | `izlan/web` — Next.js 15.5.23 · typecheck/lint clean · `next build` ok · `npm ci` reproduces |
 
 ## What is implemented (high level)
@@ -107,9 +133,9 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
 - **Content authoring application layer: PARTIALLY IMPLEMENTED / STARTED (2.2A-1)** — staff content
   controllers/services/repositories under `/api/staff/content`; permissions `content.author` + `content.subject.manage`;
   SubjectAssignment enforcement (child content); Subject/Track/Level/Module/Topic + logical Lesson authoring; StaffAudit
-  mutation wiring; `updatedAt` optimistic concurrency. **Still NOT built:** LessonRevision authoring, Activity authoring +
-  write-time payload validation, Skill-mapping writers, prerequisite writer / full-DAG validation, review/publishing, CMS
-  frontend, bulk import.
+  mutation wiring; `updatedAt` optimistic concurrency. Subsequent slices completed the authoring/publishing lifecycle
+  (2.2A-2/3, 2.2B), the Methodist CMS frontend (2.2C), and **Topic-scoped JSON bulk content import (2.2D)**. **Still NOT
+  built:** ActivityMedia upload/delivery, English A1 pilot content (→ 2.2E), and the learner web app (→ 3.x).
   The **canonical Lesson Activity registry** (2.2A-R, `src/content/activity/activity-registry.ts`) is the runtime-side
   classification authority the future authoring backend will validate writes against; view-only Activity payload shapes
   remain undefined (payloadContract = NONE_DEFINED).
@@ -124,7 +150,6 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
 is now an implementation step, not a blocker.)
 
 ## Recommended next build step (subject to owner prompt)
-Phase **2.2C** — Methodist CMS (frontend consuming the 2.2A/2.2B staff APIs: hierarchy/lesson/revision/activity/skill/
-prerequisite authoring + review/publish/preview/readiness/takedown). Then `2.2D` bulk import, `2.2E` English A1 pilot
-content; separately, ActivityMedia management/upload/delivery remains deferred (readiness is enforced but there is no media
-storage). **Do NOT start without the owner's phase prompt.**
+Phase **2.2E** — English A1 pilot content (authored via the 2.2A/2.2B CMS and/or the 2.2D bulk importer). Separately,
+ActivityMedia management/upload/delivery remains deferred (readiness is enforced but there is no media storage), and the
+learner web app is a 3.x concern. **Do NOT start without the owner's phase prompt.**
