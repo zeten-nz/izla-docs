@@ -769,6 +769,29 @@ does **not** rewrite its origin (§20 invariant I-5: AI-sourced content cannot b
   [BULK_IMPORT.md](BULK_IMPORT.md).
 - **Status:** ACCEPTED (implemented Phase 2.2E)
 
+### TD-255 — Learner Web Foundation and Route Boundaries (ACCEPTED, implemented Phase 3.0)
+The first learner-facing Izlan web experience. Living doc: [LEARNER_WEB_FOUNDATION.md](LEARNER_WEB_FOUNDATION.md).
+- **One app, two route families.** The learner product and the staff CMS live in the SAME Next.js application
+  (`izlan/web`) — no second frontend repository/app. `/` is the **learner/public** landing (no longer a staff redirect);
+  learner routes are **`/learn/**`** (+ `/login`, `/register`, `/forgot-password`, `/onboarding`); staff remains
+  **`/staff/**`** (unchanged). Branding: learner = **Izlan**, staff = **Izlan Studio**. Staff CMS is secondary/internal.
+- **One shared auth/session authority.** No separate learner/staff auth systems — a single access-token memory store,
+  single-flight refresh, and API auth client. Learner route guards derive from **auth bootstrap + backend onboarding
+  state**, never a role-name gate (a user may hold more than one role). Post-login intent is per LOGIN PAGE: learner
+  `/login` → `/onboarding` (incomplete) or `/learn`; staff `/staff/login` → `/staff/content`. Redirects accept only a
+  **safe local** `?next` (no open redirect). Access tokens never in localStorage/sessionStorage/URL.
+- **Onboarding authority = backend.** Resumability derives from `GET /profile/me` + `GET /onboarding/status` +
+  `GET /onboarding/learning-intents` (profile fields + ≥1 complete LearningIntent) — no separate local "onboarding
+  complete" boolean; completion requires backend `canComplete`.
+- **Dashboard is read-only composition in 3.0.** It composes existing READ endpoints (profile/status/intents, then the
+  active roadmap and today's plan) and **never** generates a Daily Plan (no `POST /daily-plans/today`); a page load never
+  mutates learning state. No fabricated XP/streak/progress.
+- **UI locale uz/ru/en** (chrome only; `preferredLanguage` registry extended to match — string field, no schema change).
+- **Deferred:** the lesson-execution UI is Phase 3.1; the diagnostic/placement UI is Phase 3.2.
+- **No schema change, no migration** (migrations stay 23, CHECK 46). The only backend changes are the `preferredLanguage`
+  registry (uz/ru/en) and a LEARNER demo-seed account.
+- **Status:** ACCEPTED (implemented Phase 3.0)
+
 > Bu hujjat D-04'dagi "hali tanlanmagan" ro'yxatini bosqichma-bosqich yopib boradi.
 > Faqat haqiqatan qabul qilingan qarorlar ACCEPTED; product tasdig'ini kutayotganlar bu yerda yozilmaydi ([OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) va [AUTH_ARCHITECTURE.md](AUTH_ARCHITECTURE.md) §23).
 

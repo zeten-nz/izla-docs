@@ -6,8 +6,11 @@
 ## Repository pointers (verified 2026-08-22)
 | Repo | Role | Branch | HEAD SHA (at verification) | Working tree |
 |---|---|---|---|---|
-| `zeten-nz/izlan` | code / schema / migrations / tests + `web/` | `phase/2.2E` | `e1112e0e2ed429de9ffa5a47f1d86c09c8f15164` (init `44a0bfb` → provenance/pedagogy `016400c` → final reconciliation; base `main` `a977c358`, which merged 2.2D) | clean |
-| `zeten-nz/izla-docs` | product/architecture decisions, checkpoints | `phase/2.2E` | `phase/2.2E` (final SHA in PR; base `main` `2bdd590`, which merged 2.2D docs) | clean |
+| `zeten-nz/izlan` | code / schema / migrations / tests + `web/` | `phase/3.0` | `5c772d7c4897b60529b5c9eae0a5f1cdded01678` (base `main` `b1bfd80`, which merged 2.2E) | clean |
+| `zeten-nz/izla-docs` | product/architecture decisions, checkpoints | `phase/3.0` | `phase/3.0` (final SHA in PR; base `main` `4d28b8c`, which merged 2.2E docs) | clean |
+
+**Phase 2.2E is MERGED / CLOSED** — runtime `main` `b1bfd80575202df544bdd1e8438dfacb35e5df66`, docs `main`
+`4d28b8c6394d1804cde78eb975913987cfb6712a`.
 
 **Phase 2.2D is MERGED / CLOSED** — runtime `main` `a977c35816d5642a93eb071b1ad56d71aba6400d`, docs `main`
 `2bdd590bdd7cae88e19d94ecbfed6569d16e30ab`.
@@ -22,8 +25,26 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
 > (historical authority). Per-phase branch/SHA recording begins with the adopted workflow.
 
 ## Current position
-- **Last completed:** Phase **2.2E** — English A1 Pilot Content v1. Result: **TECHNICAL PASS — implementation complete on
-  branch `phase/2.2E` (code `e1112e0`); PEDAGOGICAL OWNER/METHODIST REVIEW PENDING (not merged)**. The **first real
+- **Last completed:** Phase **3.0** — Learner Web Foundation. Result: **TECHNICAL PASS — implementation complete on branch
+  `phase/3.0` (code `5c772d7`); OWNER UI REVIEW PENDING (not merged)**. The **first learner-facing Izlan web experience**,
+  in the SAME Next.js app as the staff CMS (no second frontend): a public landing at **`/`** (Izlan positioned as
+  personalized self-study; the staff redirect removed), learner auth (**`/login`** phone+password, **`/register`** phone→
+  OTP→password, **`/forgot-password`**), a resumable 4-step **`/onboarding`** wizard (Profil→Fan→Yo'nalish→Boshlash), and
+  the learner app (**`/learn`** read-only foundation dashboard, **`/learn/subjects`**, **`/learn/profile`**) behind a
+  learner shell (top nav + mobile bottom nav) distinct from the staff sidebar. Branding: learner = **Izlan**, staff =
+  **Izlan Studio**. **ONE shared auth/session authority** is reused (access token memory-only, single-flight refresh); a
+  `LearnerGuard` waits for bootstrap and routes to `/login`; post-login intent is **per login page** (learner →
+  `/onboarding`|`/learn`; staff → `/staff/content`), never role-gated, with **safe-local `?next` only** (no open redirect).
+  Onboarding authority is backend state (profile + LearningIntent + `canComplete`); the dashboard is **read-only** (never
+  `POST /daily-plans/today`, no fabricated XP/streak/progress). Friendly, enumeration-safe, **code-free error UX**
+  (the generic message no longer prints the machine code) applied to staff login too. **API base hardening**: a missing
+  `NEXT_PUBLIC_API_BASE_URL` fails visibly instead of silently hitting same-origin. UI i18n uz/ru/en. **Backend changes are
+  minimal**: `preferredLanguage` registry → uz/ru/en (string field) and a LEARNER demo-seed account (+998900000003,
+  LEARNER-only, no assignment, incomplete onboarding) — the English A1 pilot is NOT auto-published. **No schema change,
+  no migration** (migrations **23**, CHECK **46**). TD-255 added; living doc [LEARNER_WEB_FOUNDATION.md](LEARNER_WEB_FOUNDATION.md);
+  see [checkpoints/3.0.md](checkpoints/3.0.md). The lesson player (→ 3.1) and diagnostic UI (→ 3.2) are NOT built.
+- **Prior:** Phase **2.2E** — English A1 Pilot Content v1. Result: **TECHNICAL PASS — MERGED to `main` (`b1bfd80`);
+  PEDAGOGICAL OWNER/METHODIST REVIEW still recommended before real publication**. The **first real
   educational content pack**: English → General English → A1 → A1 Foundations, **4 Topics / 12 Lessons / 98 Activities /
   13 Skills** (~176 min), teaching language **Uzbek**, target **English**. Content lives in the runtime repo at
   `content/pilots/english-a1/v1/` (4 `izlan-topic-content/v1` packages + `manifest.json` + `README.md`) — authoring source
@@ -43,7 +64,7 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
   dev/prod and publication remains a manual CMS step after human review. The content is an **AI-assisted draft** — not
   pedagogically approved, not CEFR-certified. See [ENGLISH_A1_PILOT.md](ENGLISH_A1_PILOT.md) and
   [checkpoints/2.2E.md](checkpoints/2.2E.md). Latest TD is **TD-254** (amends TD-253). The learner web app is a 3.x concern.
-- **Prior:** Phase **2.2D** — Topic-Scoped JSON Bulk Content Import v1. Result: PASS — **MERGED to `main` (`a977c358`)**.
+- **Earlier:** Phase **2.2D** — Topic-Scoped JSON Bulk Content Import v1. Result: PASS — **MERGED to `main` (`a977c358`)**.
   The first bulk-authoring pipeline: local JSON
   document → strict validation → dry-run plan → human confirmation → **atomic DRAFT import** into an **existing** Topic.
   Imports Skills (by Subject-scoped `code`, reuse ACTIVE), Lessons (create-only `contentKey`) + one initial LessonRevision
@@ -132,17 +153,17 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
 - **Workflow:** the two-repo phase/checkpoint/SHA workflow is adopted (rules in `izlan/CLAUDE.md`).
 - **No future phase is marked complete.** No implementation phase starts until the owner supplies its specific prompt.
 
-## Baseline (phase/2.2E @ `e1112e0`; izlan `main` `a977c358`)
+## Baseline (phase/3.0 @ `5c772d7`; izlan `main` `b1bfd80`)
 | Metric | Value |
 |---|---|
-| migrations | 23 (unchanged; last: `20260822120000_password_credential`, TD-252; 2.2E adds NO schema/migration) |
-| backend unit tests | 505 (2.2E: +11 PILOT + aggregate, +4 provenance/PILOT-PROV, +2 IMP-PROV-06/PILOT-12-CUMULATIVE) |
-| backend e2e tests | 599 (2.2E: +5 PILOT-E2E/IMPORT-SAFETY/PUBLISH/LEARNER/SCORING, +5 IMP-PROV-01..06) |
-| backend total tests | **1104** (505 + 599) |
-| web tests (Vitest) | 52 (unchanged in 2.2E) |
+| migrations | 23 (unchanged; last: `20260822120000_password_credential`, TD-252; 3.0 adds NO schema/migration) |
+| backend unit tests | 505 (unchanged in 3.0) |
+| backend e2e tests | 601 (3.0: +LEARNER-LANG preferredLanguage ru, +DEMO-LEARNER seed) |
+| backend total tests | **1106** (505 + 601) |
+| web tests (Vitest) | 92 (3.0: +40 WEB-AUTH/REG/REC/ONB/HOME/SUB/PROFILE learner tests; staff tests intact) |
 | named CHECK constraints | 46 (unchanged; no schema change) |
 | drift | clean (empty diff / exit 0 on izlan_dev + izlan_test) |
-| pilot content | `content/pilots/english-a1/v1` — 4 packages / 12 lessons / 98 activities / 13 skills / ~176 min; provenance AI_ASSISTED (TD-254); `npm run content:pilot:a1:validate` → VALID |
+| learner web | `izlan/web` — public `/` landing + `/login` `/register` `/forgot-password` `/onboarding` `/learn/**`; staff `/staff/**` intact; one shared auth authority; UI uz/ru/en |
 | web app | `izlan/web` — Next.js 15.5.23 · typecheck/lint clean · `next build` ok · `npm ci` reproduces |
 
 ## What is implemented (high level)
@@ -176,6 +197,7 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
 is now an implementation step, not a blocker.)
 
 ## Recommended next build step (subject to owner prompt)
-After the owner/Methodist accepts the Phase 2.2E pilot content: Phase **3.0 — Learner Web Foundation** (the first learner
-web app consuming the published content + learner runtime). Separately, ActivityMedia management/upload/delivery remains
-deferred (readiness is enforced but there is no media storage). **Do NOT start without the owner's phase prompt.**
+After the owner accepts the Phase 3.0 learner web foundation: Phase **3.1 — Learner Lesson Player** (lesson execution /
+activity attempts / completion UI over the existing runtime); then Phase **3.2 — Diagnostic/Placement UX**. Separately,
+ActivityMedia management/upload/delivery remains deferred (readiness is enforced but there is no media storage). **Do NOT
+start without the owner's phase prompt.**
