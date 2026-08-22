@@ -31,6 +31,7 @@ constraints stay **46**.
 ```jsonc
 {
   "schemaVersion": "izlan-topic-content/v1",   // exact match; unknown → IMPORT_SCHEMA_UNSUPPORTED
+  "provenance": { "source": "AI_ASSISTED" },   // OPTIONAL (TD-254); omitted → HUMAN. Every Activity inherits it.
   "skills": [
     { "code": "DEMO-BE", "name": "…", "description": "…", "sortOrder": 0 }
   ],
@@ -56,12 +57,21 @@ constraints stay **46**.
 **Strict shape.** Unknown top-level *and* nested fields, wrong types, duplicate `contentKey`s, duplicate skill `code`s, and
 malformed payloads are rejected. **Server-owned fields are forbidden** in the document: `id`, `topicId`, `status`,
 `createdBy`, timestamps, `publishedRevisionId`, and revision `id`/`version`/`status`/`reviewedBy`/`publishedBy`/
-`publishedAt`. Every lesson receives exactly one revision `version=1 status=DRAFT createdBy=actor`; Activities are
-`source=HUMAN`, `aiMetadata=null`.
+`publishedAt`. Every lesson receives exactly one revision `version=1 status=DRAFT createdBy=actor`. Each Activity's
+`source` inherits the package provenance (see **Provenance** below; omitted provenance → `HUMAN`), and `aiMetadata`
+remains `null` (not accepted in v1).
 
 **Supported activity types:** markdown (`TEXT`/`EXPLANATION`/`EXAMPLE`) and objective (`MINI_QUESTION`/`PRACTICE`/
 `MASTERY_TEST`). Every other type → `IMPORT_ACTIVITY_TYPE_UNSUPPORTED`. Payloads are validated by the same
 `validateActivityPayloadForAuthoring` used by single-item authoring (no second parser).
+
+**Provenance (TD-254).** The optional root `provenance.source` — `HUMAN` / `AI_ASSISTED` / `AI_GENERATED` — records the
+origin of the package's Activities. **Omitted → HUMAN** (backward compatible with 2.2D documents). STRICT: the only
+field is `source`, and its value must be an exact enum; an unknown field inside `provenance` or an invalid `source` →
+`IMPORT_INVALID_DOCUMENT`. Every Activity in the package persists with this `source`; **`aiMetadata` is not accepted in
+v1 and stays null**. Provenance is part of the `documentHash` (same content under HUMAN vs AI_ASSISTED hashes
+differently). Human review/import does **not** rewrite provenance — AI content still flows through the DRAFT → REVIEW →
+PUBLISHED workflow.
 
 **Per-item limits:** ≤200 skills, ≤250 lessons, ≤5000 activities, ≤100 skillRefs/lesson, ≤50 skillRefs/activity,
 ≤50 prereqs/lesson → `IMPORT_LIMIT_EXCEEDED`.
