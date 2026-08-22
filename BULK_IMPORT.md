@@ -57,8 +57,9 @@ constraints stay **46**.
 **Strict shape.** Unknown top-level *and* nested fields, wrong types, duplicate `contentKey`s, duplicate skill `code`s, and
 malformed payloads are rejected. **Server-owned fields are forbidden** in the document: `id`, `topicId`, `status`,
 `createdBy`, timestamps, `publishedRevisionId`, and revision `id`/`version`/`status`/`reviewedBy`/`publishedBy`/
-`publishedAt`. Every lesson receives exactly one revision `version=1 status=DRAFT createdBy=actor`; Activities are
-`source=HUMAN`, `aiMetadata=null`.
+`publishedAt`. Every lesson receives exactly one revision `version=1 status=DRAFT createdBy=actor`. Each Activity's
+`source` inherits the package provenance (see **Provenance** below; omitted provenance → `HUMAN`), and `aiMetadata`
+remains `null` (not accepted in v1).
 
 **Supported activity types:** markdown (`TEXT`/`EXPLANATION`/`EXAMPLE`) and objective (`MINI_QUESTION`/`PRACTICE`/
 `MASTERY_TEST`). Every other type → `IMPORT_ACTIVITY_TYPE_UNSUPPORTED`. Payloads are validated by the same

@@ -750,9 +750,9 @@ without ever weakening the per-mutation authorization, lifecycle, or DAG invaria
 ### TD-254 — Bulk Import Activity Provenance v1 (ACCEPTED, implemented Phase 2.2E)
 **Amends TD-253** (does not rewrite it — TD-253 remains the historical authority for 2.2D). Motivated by the 2.2E pilot:
 the bulk importer previously persisted every imported Activity as `ContentSource.HUMAN`, which corrupted the provenance
-of AI-assisted content. Per DATA_MODEL_CORE / TD-20, `Activity.source` (`HUMAN` / `AI_GENERATED` / `AI_ASSISTED`) is
-**provenance** used for review filtering and quality analysis — a human importing or reviewing content does **not**
-rewrite its origin. This is a minimal, backward-compatible contract extension (owner-authorized).
+of AI-assisted content. Per **DATA_MODEL_CORE.md §20 (AI provenance)**, `Activity.source` (`HUMAN` / `AI_GENERATED` /
+`AI_ASSISTED`) is **provenance** used for review filtering and quality analysis — a human importing or reviewing content
+does **not** rewrite its origin (§20 invariant I-5: AI-sourced content cannot be PUBLISHED without human review). This is a minimal, backward-compatible contract extension (owner-authorized).
 - **Optional package-level provenance.** `izlan-topic-content/v1` gains an OPTIONAL root field
   `{ "provenance": { "source": "HUMAN" | "AI_ASSISTED" | "AI_GENERATED" } }`. **Omitted → HUMAN** (backward compatible
   with existing 2.2D documents). STRICT: the only field is `source`, whose value must be an exact `ContentSource` enum;

@@ -160,8 +160,8 @@ are unchanged.
 The pilot files are AI-assisted drafts, and they say so: each package declares `provenance.source = AI_ASSISTED`. The
 importer persists that source on **every** imported Activity (`aiMetadata = null`) — it no longer forces `HUMAN`.
 Provenance is origin, not a review stamp: **human review does not rewrite it.** AI-assisted content keeps its `source`
-and still flows through the existing DRAFT → REVIEW → PUBLISHED workflow before any learner sees it, satisfying TD-20
-(no publish without review). The optional `provenance.source` is the minimal accepted provenance authority; provider/
+and still flows through the existing DRAFT → REVIEW → PUBLISHED workflow before any learner sees it, satisfying
+DATA_MODEL_CORE.md §20 (AI provenance, invariant I-5 — no publish without review). The optional `provenance.source` is the minimal accepted provenance authority; provider/
 model `aiMetadata` remains deferred (not accepted in v1). See [TD-254](TECH_DECISIONS.md) and
 [BULK_IMPORT.md](BULK_IMPORT.md).
 
