@@ -10,6 +10,11 @@
 > password reset revokes all of that user's sessions. Everything below still describes the session/token/OTP internals
 > accurately; only the *login trigger* changed. Historical checkpoints are NOT rewritten. See TD-252.
 >
+> **Security clarification (TD-252):** password-login rate limiting is **DB-backed and cross-process** — authority = the
+> append-only `SecurityEvent` table (`password_login_attempt`), serialized with Postgres advisory locks, keyed by IP +
+> an **HMAC fingerprint** of the phone (never the raw phone); the in-memory limiter is NOT the password-login authority.
+> Password reset is **atomic**: credential replacement + revoke-all sessions/tokens + events commit or roll back together.
+>
 > Status: Phase 1.1 technical architecture (2026-08-20). Bu design hujjati — implementation EMAS.
 > Bog'liq hujjatlar: [TECH_DECISIONS.md](TECH_DECISIONS.md), [USER_ROLES.md](USER_ROLES.md), [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md) (D-30..D-33).
 > Barcha aniq raqamlar (TTL, limitlar) — **tuning parameter**: qiymatlar tavsiya, final emas.

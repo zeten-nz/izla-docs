@@ -650,6 +650,19 @@ longer the ordinary login mechanism. Historical checkpoints are NOT rewritten �
   env-driven passwords hashed via the production hasher, idempotent) seeds demo Admin/Methodist + `english-demo` subject
   assigned to both (exercises the real authorization model — ADMIN has no assignment bypass). A dev login helper
   (`NEXT_PUBLIC_ENABLE_DEMO_ACCOUNTS`) fills the phone ONLY — never the password, never auto-login.
+- **CLARIFICATION (security correction, same phase — no new TD):**
+  - **Password-login rate limiting is DB-backed and CROSS-PROCESS**, not process-local. Its authority is the append-only
+    `SecurityEvent` table (event `password_login_attempt`) — NO new schema/migration — so it survives restarts and is
+    shared across PM2/multi-instance workers. Each attempt is admitted inside ONE transaction that acquires
+    deterministic-ordered Postgres **advisory locks** (no deadlock), counts attempts in the window, denies at the limit,
+    else records exactly one attempt — so concurrent attempts cannot overshoot the bucket. The raw phone is **never** a
+    rate-limit key: only an **HMAC-SHA256**(`AUTH_OTP_PEPPER`, domain-separated) fingerprint is stored; a malformed phone
+    is IP-limited only (no global invalid-phone bucket). The in-memory limiter is **NOT** the password-login authority
+    (retained only for `otp/request`).
+  - **Password reset is ATOMIC.** Credential replacement + revoke-all `AuthSession` + revoke-all `RefreshToken` + the
+    authoritative `password_reset_success` / `all_sessions_revoked` events all commit or roll back in ONE transaction
+    (shared `SessionsService.revokeAllUserSessionsInTransaction`, reused by logout-all). A stolen refresh can never
+    survive a reset, and a credential change never commits if revocation fails. Password hashing stays outside the tx.
 - **Status:** ACCEPTED (implemented Phase 2.2C)
 
 > Bu hujjat D-04'dagi "hali tanlanmagan" ro'yxatini bosqichma-bosqich yopib boradi.
