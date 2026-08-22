@@ -611,6 +611,14 @@ Profile/onboarding foundation ([LEARNER_ONBOARDING_IMPLEMENTATION.md](LEARNER_ON
   `storageKey` and never stringifies the raw payload. Markdown is rendered with **raw HTML disabled** (react-markdown, no
   `rehype-raw`, no `dangerouslySetInnerHTML`). Unsupported ActivityTypes are not creatable; **ActivityMedia authoring is
   deferred** (metadata display only — no fake upload). No learner web app in this phase (only the staff learner-preview).
+- **Design + i18n (owner override, same phase):** a first-class 2026 Izlan visual identity (CSS-variable tokens, `next/font`
+  Inter with Cyrillic, restrained elevation, whitespace-led layout, intentional light+dark), a small Framer-Motion motion
+  system that is **reduced-motion aware** (`MotionConfig reducedMotion="user"`), a collapsible animated sidebar, and a
+  ⌘K command palette (current-data only, no new backend search). **UI i18n = chrome only**, locales **uz (default) / ru /
+  en**, via a client `I18nProvider` + `useT()` (dictionaries typed against the `uz` shape); locale persisted in
+  localStorage + a non-auth cookie, decoupled from auth token state. **UI language ≠ content language:** authored Lesson
+  content and the content model are UNCHANGED — no localized content fields/tables, no translation workflow, no schema/
+  migration. Backend enum values are never localized (only their display labels).
 - **Status:** ACCEPTED (implemented Phase 2.2C)
 
 > Bu hujjat D-04'dagi "hali tanlanmagan" ro'yxatini bosqichma-bosqich yopib boradi.

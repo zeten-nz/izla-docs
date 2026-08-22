@@ -56,6 +56,24 @@
 - Lifecycle freeze mirrors the backend: containers/lessons editable only in DRAFT; revisions/activities/mappings only when
   the owning revision/lesson is DRAFT; skills only when ACTIVE. Impossible actions are hidden, not shown-then-erroring.
 
+## Design & motion
+- **Tokens** (`app/globals.css`): CSS variables for bg/surface/surface-2/border/text/muted/primary/danger/warning/success/
+  info + ring/shadow; intentional light AND dark palettes (Tailwind reads them via `rgb(var(--token) / <alpha>)`); no
+  hard-coded hex in components. **Typography:** `next/font` Inter, `latin` + `cyrillic` subsets, exposed as `--font-sans`.
+- **Motion** (`lib/motion/motion.ts`, Framer Motion): one preset set (spring/ease, 120–280ms) for dialog/palette, overlay,
+  toast, tab indicator (shared layout), list in/out, drawer, sidebar collapse, page fade, button press. Global
+  `MotionConfig reducedMotion="user"` respects the OS reduce-motion setting.
+- **Shell:** collapsible animated sidebar (icons + tooltips collapsed; pref in `izl-sidebar`), mobile drawer, ⌘K command
+  palette (`components/shell/CommandPalette.tsx` — navigate/switch-subject/theme, current data only). Escape closes overlays.
+
+## i18n (UI chrome only)
+- Client `I18nProvider` + `useT()` (`lib/i18n/`), flattened dictionaries with `{var}` interpolation. Locales **uz
+  (default) / ru / en**; `ru`/`en` are typed `Messages` (the `uz` shape) so missing/extra keys fail typecheck. Locale
+  persisted in `localStorage` + a non-auth cookie (`izl-locale`); `<html lang>` updates; decoupled from the auth token.
+- **UI language ≠ content language.** Only application chrome is localized. Authored Lesson content and the content model
+  are unchanged (no `titleUz/Ru/En`, no translation tables, no schema/migration). Backend enum values are never localized —
+  only their display labels (e.g. `PUBLISHED` → Nashr qilingan / Опубликовано / Published).
+
 ## Deferred / out of scope (as of 2.2C)
 ActivityMedia upload/delivery (→ later), bulk import (→ 2.2D), learner web app (→ 3.x), AI authoring. See
 [PROJECT_STATE.md](PROJECT_STATE.md).

@@ -18,7 +18,7 @@
 | 2.2A-2 | Draft LessonRevision + Activity authoring + payload contract closure (objective/markdown/media; no schema; +OCC token hardening) | PASS | 22 | 449 | 499 | `e716bd2` | `phase/2.2A-2` (SHA in checkpoint/PR) | [2.2A-2.md](checkpoints/2.2A-2.md) |
 | 2.2A-3 | Skill + LessonSkill + ActivitySkill + prerequisite DAG authoring (Subject-lock cycle prevention; no schema) | PASS | 22 | 458 | 520 | `b355733` | `phase/2.2A-3` (SHA in checkpoint/PR) | [2.2A-3.md](checkpoints/2.2A-3.md) |
 | 2.2B | Review + publishing + preview + readiness + centralized learner visibility + takedown (Lesson-lock; no schema) | PASS | 22 | 474 | 542 | `4c7ce7a` | `phase/2.2B` (SHA in checkpoint/PR) | [2.2B.md](checkpoints/2.2B.md) |
-| 2.2C | Methodist CMS web app (`izlan/web`, Next.js) + narrow capability endpoint (no schema; +22 Vitest web tests) | PASS | 22 | 474 | 547 | `a519344` | `phase/2.2C` (SHA in checkpoint/PR) | [2.2C.md](checkpoints/2.2C.md) |
+| 2.2C | Methodist CMS web app (`izlan/web`, Next.js) + narrow capability endpoint (no schema; design + i18n uz/ru/en; +28 Vitest web tests) | PASS | 22 | 474 | 547 | `474daae` | `phase/2.2C` (SHA in checkpoint/PR) | [2.2C.md](checkpoints/2.2C.md) |
 | _next_ | (awaiting owner phase prompt) | — | — | — | — | — | — | — |
 
 ## Historical phases (pre-per-phase-SHA — all in code `19461eb`, docs `92cadce`)

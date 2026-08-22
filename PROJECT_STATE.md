@@ -6,7 +6,7 @@
 ## Repository pointers (verified 2026-08-21)
 | Repo | Role | Branch | HEAD SHA (at verification) | Working tree |
 |---|---|---|---|---|
-| `zeten-nz/izlan` | code / schema / migrations / tests + `web/` | `phase/2.2C` | `a519344996a91177d5d10a3333dd3942b6b00232` (base `main` `14a6d5c`) | clean |
+| `zeten-nz/izlan` | code / schema / migrations / tests + `web/` | `phase/2.2C` | `474daae5bef903d34419aa685e5d693ac14de9ac` (base `main` `14a6d5c`) | clean |
 | `zeten-nz/izla-docs` | product/architecture decisions, checkpoints | `phase/2.2C` | `phase/2.2C` (final SHA in PR) | clean |
 
 \* Phase **2.2B** (review + publishing + preview + readiness + learner visibility) implemented on branch `phase/2.2B` —
@@ -20,7 +20,7 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
 
 ## Current position
 - **Last completed:** Phase **2.2C** — Methodist CMS Web Application. Result: PASS — **complete on branch `phase/2.2C`
-  (code `a519344`), OWNER REVIEW PENDING (not merged)**. The **first Izlan web app** lives at **`izlan/web`** (Next.js
+  (code `474daae`), OWNER REVIEW PENDING (not merged)**. The **first Izlan web app** lives at **`izlan/web`** (Next.js
   App Router + TypeScript + React + Tailwind), a professional Methodist/Admin content CMS consuming the 2.2A/2.2B staff
   APIs: subject/hierarchy/lesson/revision/activity/skill/prerequisite authoring, readiness, learner preview, and the
   review→publish→takedown workflow. **Auth:** access token **memory-only**, HttpOnly rotating refresh cookie, **single-flight
@@ -30,9 +30,12 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
   mutation). **OCC:** one centralized `Revision.updatedAt` authority + per-aggregate tokens; conflicts surface a banner,
   never a silent retry. **Content safety:** canonical markdown/objective serializers; learner preview via an allowlist safe
   view model (never `answerKey`/`correctOptionIds`/`storageKey`); Markdown raw HTML disabled. **Only backend change** = the
-  capability endpoint + tests; **no schema/migration**. TD-251 added. See [checkpoints/2.2C.md](checkpoints/2.2C.md) and the
-  living [METHODIST_CMS.md](METHODIST_CMS.md). ActivityMedia upload, bulk import (→ 2.2D), and the learner web app (→ 3.x)
-  are NOT built.
+  capability endpoint + tests; **no schema/migration**. An **owner design + language override** (same branch, in-place)
+  added a 2026 Izlan visual identity (refined tokens, `next/font` Inter with Cyrillic), a reduced-motion-aware Framer-Motion
+  system, a collapsible animated sidebar + ⌘K command palette, and **UI i18n (uz default / ru / en — chrome only; the
+  content model is unchanged, no schema/migration)**; functional/OCC/security behavior preserved. TD-251 added (design +
+  i18n folded in). See [checkpoints/2.2C.md](checkpoints/2.2C.md) and the living [METHODIST_CMS.md](METHODIST_CMS.md).
+  ActivityMedia upload, bulk import (→ 2.2D), and the learner web app (→ 3.x) are NOT built.
 - **Prior:** Phase **2.2B** — Review + Publishing + Preview + Readiness + Learner Visibility (PASS; `content.publish` +
   self-publish, top-down hierarchy publish, atomic Lesson-serialized publication + pointer switch, idempotent republish,
   canonical readiness, centralized visibility, urgent takedown gating every learner surface, `PREREQUISITE_SUBJECT_MISMATCH`).
@@ -70,14 +73,14 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
 - **Workflow:** the two-repo phase/checkpoint/SHA workflow is adopted (rules in `izlan/CLAUDE.md`).
 - **No future phase is marked complete.** No implementation phase starts until the owner supplies its specific prompt.
 
-## Baseline (phase/2.2C @ `a519344`; izlan `main` `14a6d5c` until the PR merges)
+## Baseline (phase/2.2C @ `474daae`; izlan `main` `14a6d5c` until the PR merges)
 | Metric | Value |
 |---|---|
 | migrations | 22 (last: `20260821110000_content_schema_hardening`; **no new migration in 2.2B or 2.2C**) |
 | backend unit tests | 474 (unchanged in 2.2C) |
 | backend e2e tests | 547 (2.2C +5: CMS-SESSION-01..05 capability endpoint) |
 | backend total tests | **1021** (474 + 547) |
-| web tests (Vitest) | 22 (WEB-01..14 across auth/single-flight/OCC/serializers/preview/workflow) |
+| web tests (Vitest) | 28 (WEB-01..14 auth/single-flight/OCC/serializers/preview/workflow + I18N-01..06 locale/chrome/persistence) |
 | named CHECK constraints | 46 (unchanged) |
 | drift | clean (empty diff on izlan_dev + izlan_test) |
 | web app | `izlan/web` — Next.js 15.5.23 · typecheck/lint clean · `next build` ok · `npm ci` reproduces |
