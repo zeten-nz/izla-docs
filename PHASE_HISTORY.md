@@ -19,6 +19,7 @@
 | 2.2A-3 | Skill + LessonSkill + ActivitySkill + prerequisite DAG authoring (Subject-lock cycle prevention; no schema) | PASS | 22 | 458 | 520 | `b355733` | `phase/2.2A-3` (SHA in checkpoint/PR) | [2.2A-3.md](checkpoints/2.2A-3.md) |
 | 2.2B | Review + publishing + preview + readiness + centralized learner visibility + takedown (Lesson-lock; no schema) | PASS | 22 | 474 | 542 | `4c7ce7a` | `phase/2.2B` (SHA in checkpoint/PR) | [2.2B.md](checkpoints/2.2B.md) |
 | 2.2C | Methodist CMS web app (`izlan/web`, Next.js) + capability endpoint; design + i18n uz/ru/en; a11y; **TD-252 phone+password auth** (Argon2id `PasswordCredential`, OTP→registration/reset, migration 23; DB-backed login limiter + atomic reset); 42 Vitest web tests | PASS | 23 | 479 | 562 | `5521aea` | `phase/2.2C` (SHA in checkpoint/PR) | [2.2C.md](checkpoints/2.2C.md) |
+| 2.2D | Topic-scoped JSON bulk content import v1 (**TD-253**; `izlan-topic-content/v1` → strict validate → dry-run → atomic DRAFT import into existing Topic; Subject-lock re-validated apply; safe audit/hash; **no schema/migration**); CMS 3-step importer (uz/ru/en); +10 Vitest web tests | PASS | 23 | 484 | 579 | `1dc5a2c` | `phase/2.2D` (SHA in checkpoint/PR) | [2.2D.md](checkpoints/2.2D.md) |
 | _next_ | (awaiting owner phase prompt) | — | — | — | — | — | — | — |
 
 ## Historical phases (pre-per-phase-SHA — all in code `19461eb`, docs `92cadce`)
