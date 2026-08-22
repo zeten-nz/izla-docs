@@ -6,8 +6,11 @@
 ## Repository pointers (verified 2026-08-22)
 | Repo | Role | Branch | HEAD SHA (at verification) | Working tree |
 |---|---|---|---|---|
-| `zeten-nz/izlan` | code / schema / migrations / tests + `web/` | `phase/2.2D` | `8defe5b97a226d334d046c7152ab3e5f4ff86f0b` (init `1dc5a2c` + correction; base `main` `42d0b79`, which merged 2.2C PR #8) | clean |
-| `zeten-nz/izla-docs` | product/architecture decisions, checkpoints | `phase/2.2D` | `phase/2.2D` (final SHA in PR; base `main` `ad2ca37`, which merged 2.2C docs PR #11) | clean |
+| `zeten-nz/izlan` | code / schema / migrations / tests + `web/` | `phase/2.2E` | `44a0bfb74d7db8854e7c61c103201bf17acf5388` (base `main` `a977c358`, which merged 2.2D) | clean |
+| `zeten-nz/izla-docs` | product/architecture decisions, checkpoints | `phase/2.2E` | `phase/2.2E` (final SHA in PR; base `main` `2bdd590`, which merged 2.2D docs) | clean |
+
+**Phase 2.2D is MERGED / CLOSED** — runtime `main` `a977c35816d5642a93eb071b1ad56d71aba6400d`, docs `main`
+`2bdd590bdd7cae88e19d94ecbfed6569d16e30ab`.
 
 \* Phase **2.2B** (review + publishing + preview + readiness + learner visibility) implemented on branch `phase/2.2B` —
 izlan base `main` @ `9ebd90a` (which merged the 2.2A-3 PR #6); docs base `main` @ `4b8b89f` (which merged the 2.2A-3 docs,
@@ -19,8 +22,23 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
 > (historical authority). Per-phase branch/SHA recording begins with the adopted workflow.
 
 ## Current position
-- **Last completed:** Phase **2.2D** — Topic-Scoped JSON Bulk Content Import v1. Result: PASS — **complete on branch
-  `phase/2.2D` (code `1dc5a2c`), OWNER REVIEW PENDING (not merged)**. The first bulk-authoring pipeline: local JSON
+- **Last completed:** Phase **2.2E** — English A1 Pilot Content v1. Result: **TECHNICAL PASS — implementation complete on
+  branch `phase/2.2E` (code `44a0bfb`); PEDAGOGICAL OWNER/METHODIST REVIEW PENDING (not merged)**. The **first real
+  educational content pack**: English → General English → A1 → A1 Foundations, **4 Topics / 12 Lessons / 96 Activities /
+  13 Skills**, teaching language **Uzbek**, target **English**. Content lives in the runtime repo at
+  `content/pilots/english-a1/v1/` (4 `izlan-topic-content/v1` packages + `manifest.json` + `README.md`) — authoring source
+  files that carry server-only answerKey and are **never** delivered to the browser. Markdown + objective activities only
+  (no media/speaking/writing/listening/AI). Linear prerequisite chain 001→012; 13 Subject-scoped Skills reused across
+  packages. A `npm run content:pilot:a1:validate` command + PILOT-01..10 unit tests validate the pilot through the
+  EXISTING importer parser (no second format/parser). A real e2e imports all 12 lessons (4 import audits, DRAFT-only),
+  publishes the whole pilot top-down + in prerequisite order via the existing review→publish workflow with **zero
+  readiness blockers**, and smoke-tests learner-safe projection (no answerKey leak) + deterministic objective scoring
+  (10000/0, no AI). **No schema change, no migration** (migrations **23**, CHECK **46**); nothing auto-imports into
+  dev/prod and publication remains a manual CMS step after human review. The content is an **AI-assisted draft** — not
+  pedagogically approved, not CEFR-certified. See [ENGLISH_A1_PILOT.md](ENGLISH_A1_PILOT.md) and
+  [checkpoints/2.2E.md](checkpoints/2.2E.md). No new TD (latest remains TD-253). The learner web app is a 3.x concern.
+- **Prior:** Phase **2.2D** — Topic-Scoped JSON Bulk Content Import v1. Result: PASS — **MERGED to `main` (`a977c358`)**.
+  The first bulk-authoring pipeline: local JSON
   document → strict validation → dry-run plan → human confirmation → **atomic DRAFT import** into an **existing** Topic.
   Imports Skills (by Subject-scoped `code`, reuse ACTIVE), Lessons (create-only `contentKey`) + one initial LessonRevision
   (v1), Activities (**markdown + objective only**), LessonSkill/ActivitySkill mappings, and LessonPrerequisite edges — all
@@ -43,9 +61,10 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
   reference-list items, and prerequisite keys correctly following `contentKey` — not skill-code — syntax); and **apply
   persistence is batched/chunked** (`createMany`/`createManyAndReturn`, stable-key correlation, 1000-row chunks) with new
   **aggregate relationship caps** (LessonSkill 10k / ActivitySkill 25k / prerequisites 10k) rejected before the write tx.
-  TD-253 added; living doc [BULK_IMPORT.md](BULK_IMPORT.md); see [checkpoints/2.2D.md](checkpoints/2.2D.md). ActivityMedia
-  upload, the English A1 pilot (→ 2.2E), and the learner web app (→ 3.x) remain NOT built.
-- **Prior:** Phase **2.2C** — Methodist CMS Web Application. Result: PASS — **merged to `main` (PR #8, `42d0b79`)**. The
+  TD-253 added; living doc [BULK_IMPORT.md](BULK_IMPORT.md); see [checkpoints/2.2D.md](checkpoints/2.2D.md). (The English
+  A1 pilot content that exercises this importer end-to-end is now built in 2.2E; ActivityMedia upload and the learner web
+  app remain NOT built.)
+- **Earlier:** Phase **2.2C** — Methodist CMS Web Application. Result: PASS — **merged to `main` (PR #8, `42d0b79`)**. The
   **first Izlan web app** lives at **`izlan/web`** (Next.js
   App Router + TypeScript + React + Tailwind), a professional Methodist/Admin content CMS consuming the 2.2A/2.2B staff
   APIs: subject/hierarchy/lesson/revision/activity/skill/prerequisite authoring, readiness, learner preview, and the
@@ -107,16 +126,17 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
 - **Workflow:** the two-repo phase/checkpoint/SHA workflow is adopted (rules in `izlan/CLAUDE.md`).
 - **No future phase is marked complete.** No implementation phase starts until the owner supplies its specific prompt.
 
-## Baseline (phase/2.2D @ `8defe5b`; izlan `main` `42d0b79`)
+## Baseline (phase/2.2E @ `44a0bfb`; izlan `main` `a977c358`)
 | Metric | Value |
 |---|---|
-| migrations | 23 (unchanged; last: `20260822120000_password_credential`, TD-252; 2.2D adds NO schema/migration) |
-| backend unit tests | 488 (2.2D: +5 import-parser, +4 correction) |
-| backend e2e tests | 589 (2.2D: +17 IMP-V/S/A/DAG/AUTH/AUDIT; +10 correction IMP-BODY/IMP-CONSISTENCY/IMP-SCALE) |
-| backend total tests | **1077** (488 + 589) |
-| web tests (Vitest) | 52 (2.2D: +10 WEB-IMP-01..12) |
+| migrations | 23 (unchanged; last: `20260822120000_password_credential`, TD-252; 2.2E adds NO schema/migration) |
+| backend unit tests | 499 (2.2E: +11 PILOT-01..10 + aggregate) |
+| backend e2e tests | 594 (2.2E: +5 PILOT-E2E/IMPORT-SAFETY/PUBLISH/LEARNER/SCORING) |
+| backend total tests | **1093** (499 + 594) |
+| web tests (Vitest) | 52 (unchanged in 2.2E) |
 | named CHECK constraints | 46 (unchanged; no schema change) |
 | drift | clean (empty diff / exit 0 on izlan_dev + izlan_test) |
+| pilot content | `content/pilots/english-a1/v1` — 4 packages / 12 lessons / 96 activities / 13 skills; `npm run content:pilot:a1:validate` → VALID |
 | web app | `izlan/web` — Next.js 15.5.23 · typecheck/lint clean · `next build` ok · `npm ci` reproduces |
 
 ## What is implemented (high level)
@@ -150,6 +170,6 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
 is now an implementation step, not a blocker.)
 
 ## Recommended next build step (subject to owner prompt)
-Phase **2.2E** — English A1 pilot content (authored via the 2.2A/2.2B CMS and/or the 2.2D bulk importer). Separately,
-ActivityMedia management/upload/delivery remains deferred (readiness is enforced but there is no media storage), and the
-learner web app is a 3.x concern. **Do NOT start without the owner's phase prompt.**
+After the owner/Methodist accepts the Phase 2.2E pilot content: Phase **3.0 — Learner Web Foundation** (the first learner
+web app consuming the published content + learner runtime). Separately, ActivityMedia management/upload/delivery remains
+deferred (readiness is enforced but there is no media storage). **Do NOT start without the owner's phase prompt.**
