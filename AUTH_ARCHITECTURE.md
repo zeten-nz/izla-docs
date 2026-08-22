@@ -1,5 +1,20 @@
 # Izlan — Authentication & Session Architecture
 
+> ⚠️ **AMENDMENT (2026-08-22, Phase 2.2C — TD-252): PRIMARY LOGIN is now phone + PASSWORD.** The Product Owner superseded
+> the passwordless phone+OTP *login* decision (§1 below, D-31). OTP is retained but is **no longer the ordinary login
+> mechanism** — it now verifies phone ownership for **REGISTRATION, PASSWORD_RESET, and PHONE_CHANGE** only. A dedicated
+> 1:1 `PasswordCredential` (Argon2id encoded hash, migration 23) holds the secret, separate from `User`; `User.phone`
+> remains the unique canonical identifier. Login (`POST /auth/login`) is enumeration-safe (one generic
+> `AUTH_INVALID_CREDENTIALS`) and reuses the entire session/token machinery below UNCHANGED (RS256 access JWT, rotating
+> opaque refresh token + reuse detection, HttpOnly refresh cookie, server-side revoke, account-status checks, RBAC). A
+> password reset revokes all of that user's sessions. Everything below still describes the session/token/OTP internals
+> accurately; only the *login trigger* changed. Historical checkpoints are NOT rewritten. See TD-252.
+>
+> **Security clarification (TD-252):** password-login rate limiting is **DB-backed and cross-process** — authority = the
+> append-only `SecurityEvent` table (`password_login_attempt`), serialized with Postgres advisory locks, keyed by IP +
+> an **HMAC fingerprint** of the phone (never the raw phone); the in-memory limiter is NOT the password-login authority.
+> Password reset is **atomic**: credential replacement + revoke-all sessions/tokens + events commit or roll back together.
+>
 > Status: Phase 1.1 technical architecture (2026-08-20). Bu design hujjati — implementation EMAS.
 > Bog'liq hujjatlar: [TECH_DECISIONS.md](TECH_DECISIONS.md), [USER_ROLES.md](USER_ROLES.md), [PRODUCT_DECISIONS.md](PRODUCT_DECISIONS.md) (D-30..D-33).
 > Barcha aniq raqamlar (TTL, limitlar) — **tuning parameter**: qiymatlar tavsiya, final emas.

@@ -583,6 +583,88 @@ Profile/onboarding foundation ([LEARNER_ONBOARDING_IMPLEMENTATION.md](LEARNER_ON
   publication/takedown safety gaps found in owner review. Still no schema/migration.
 - **Status:** ACCEPTED (implemented Phase 2.2B)
 
+### TD-251 — Methodist CMS Web Architecture v1 (ACCEPTED, implemented Phase 2.2C)
+- **Frontend location:** the first Izlan web app lives INSIDE the runtime repo at `izlan/web` (NOT a third repository) —
+  one runtime repo so backend + web version together; independent deploy artifacts remain possible later. Stack:
+  **Next.js App Router + TypeScript + React + Tailwind CSS**, CSS-variable design tokens (light/dark, default = system),
+  responsive desktop-first CMS. Pinned dependency versions + committed `web/package-lock.json`.
+- **Auth (unchanged backend contract):** the access token is **memory-only** — never in localStorage / sessionStorage /
+  IndexedDB / cookie / URL / any persisted store; a reload deliberately loses it. The refresh token is a browser-managed
+  **HttpOnly rotating cookie** (`izlan_refresh`, path `/api/auth/refresh`); refresh uses `credentials: include` + the
+  `X-Izlan-CSRF: 1` header. Bootstrap after reload = ONE `/auth/refresh` → `/auth/me` before deciding authenticated vs not.
+- **Single-flight refresh (load-bearing):** ONE API/auth client authority; concurrent 401s share ONE refresh promise;
+  each original request retries **at most once** after a successful refresh; a failed refresh does not loop. No
+  state-changing mutation is ever auto-retried on a 409/OCC conflict.
+- **Authorization:** the frontend NEVER hard-codes role names. A narrow backend endpoint **`GET /api/staff/content/session`**
+  (requires `content.author`) returns only CMS-safe capability booleans `{ author, publish, subjectManage }` derived from
+  effective permission codes (no role names, PII, unrelated permissions, or raw UserRole rows). Capabilities drive UX
+  visibility ONLY — the **backend remains the final authorization authority** (SubjectAssignment scope re-checked in every
+  mutation transaction). This is the ONLY backend change in 2.2C (controller + module wiring + tests; no schema/migration).
+- **OCC save model:** explicit Save (no uncontrolled autosave); each mutation sends the exact last-read aggregate token —
+  entity `updatedAt`, `Lesson.updatedAt` (LessonSkill/prerequisite), `Revision.updatedAt` (activity/ActivitySkill), publish
+  sends both revision + fresh Lesson tokens. **ONE `Revision.updatedAt` authority** is centralized in a revision-editor
+  context so no child caches a stale token. A `CONTENT_EDIT_CONFLICT` surfaces a visible conflict banner (reload latest /
+  cancel), never a silent retry.
+- **Content authoring:** Markdown (`lesson-activity-markdown/v1`) and objective (`lesson-activity-objective/v1`) payloads
+  are serialized by the frontend to the canonical backend contract (serializer tests prove it). The **learner preview** is
+  rendered through an explicit **allowlist safe view model** — it never reads/renders `answerKey`/`correctOptionIds`/
+  `storageKey` and never stringifies the raw payload. Markdown is rendered with **raw HTML disabled** (react-markdown, no
+  `rehype-raw`, no `dangerouslySetInnerHTML`). Unsupported ActivityTypes are not creatable; **ActivityMedia authoring is
+  deferred** (metadata display only — no fake upload). No learner web app in this phase (only the staff learner-preview).
+- **Design + i18n (owner override, same phase):** a first-class 2026 Izlan visual identity (CSS-variable tokens, `next/font`
+  Inter with Cyrillic, restrained elevation, whitespace-led layout, intentional light+dark), a small Framer-Motion motion
+  system that is **reduced-motion aware** (`MotionConfig reducedMotion="user"`), a collapsible animated sidebar, and a
+  ⌘K command palette (current-data only, no new backend search). **UI i18n = chrome only**, locales **uz (default) / ru /
+  en**, via a client `I18nProvider` + `useT()` (dictionaries typed against the `uz` shape); locale persisted in
+  localStorage + a non-auth cookie, decoupled from auth token state. **UI language ≠ content language:** authored Lesson
+  content and the content model are UNCHANGED — no localized content fields/tables, no translation workflow, no schema/
+  migration. Backend enum values are never localized (only their display labels).
+- **Status:** ACCEPTED (implemented Phase 2.2C)
+
+### TD-252 — Phone + Password Primary Authentication (ACCEPTED, implemented Phase 2.2C)
+**Supersedes the earlier passwordless phone+OTP *login* decision** (D-31 / AUTH_ARCHITECTURE §1). OTP remains, but is no
+longer the ordinary login mechanism. Historical checkpoints are NOT rewritten — this is the current, load-bearing decision.
+- **Identity vs secret:** `User.phone` stays the unique, canonical E.164 primary login identifier (no email/username login).
+  The authentication SECRET lives in a dedicated 1:1 **`PasswordCredential`** (`user_id` PK, `password_hash`), kept OUT of
+  the User identity row so future Passkey/TOTP stays clean. Migration **23** (`20260822120000_password_credential`) — no
+  destructive change; existing OTP-only users have NO credential row and cannot password-login until one is set/reset.
+- **Password:** Argon2id via one hashing port (`@node-rs/argon2`, 19 MiB / t=2 / p=1); only the encoded PHC hash is stored
+  (never plaintext / reversible / separate salt / logs / audit / security-event metadata). Policy = **8..128 chars, no
+  composition rules, never trimmed**; the frontend mirrors the same bounds.
+- **Login:** `POST /api/auth/login {phone,password}` → normalize phone → resolve User + PasswordCredential → verify Argon2id
+  → assert ACTIVE → reuse the EXISTING session/token issuance (RS256 access JWT + rotating opaque refresh token + HttpOnly
+  cookie), stamp `lastLoginAt`, emit a safe security event. **Enumeration-safe + timing-equalized:** unknown phone / no
+  credential / wrong password all return ONE generic `401 AUTH_INVALID_CREDENTIALS`; SUSPENDED/DEACTIVATED denied only after
+  a correct password. Per-IP + per-canonical-phone rate limit via the existing limiter (no new subsystem).
+- **OTP after amendment:** purposes are **REGISTRATION / PASSWORD_RESET / PHONE_CHANGE** (string field, no enum migration).
+  Registration = phone → OTP → chosen password → atomic `User + UserProfile + LEARNER + PasswordCredential` → session; a
+  duplicate phone never creates a second account; an OTP for one phone can never create credentials for another. Password
+  reset = phone → reset OTP → new password → credential replaced **and all of that user's sessions revoked** (a stolen
+  refresh must not survive a reset). Existing OTP hashing / rate-limiting / anti-enumeration unchanged.
+- **Staff = same login.** ADMIN and METHODIST use the same `/auth/login`; access is decided by `/auth/me` + the capability
+  endpoint. The frontend never trusts "this phone is admin"; RBAC stays the DB authority.
+- **Session architecture preserved** (RS256 JWT, rotating refresh + reuse detection, HttpOnly cookie, server-side revoke,
+  account-status checks, RBAC) — not weakened. Web: access token stays memory-only; refresh single-flight unchanged.
+- **Dev-only tooling:** `ConsoleSmsAdapter` (`SMS_DRIVER=console`, prints code only; production startup FAILS) for local
+  registration/reset when no SMS provider is configured; `npm run db:seed:demo` (prod-refused, `ALLOW_DEMO_SEED=true`,
+  env-driven passwords hashed via the production hasher, idempotent) seeds demo Admin/Methodist + `english-demo` subject
+  assigned to both (exercises the real authorization model — ADMIN has no assignment bypass). A dev login helper
+  (`NEXT_PUBLIC_ENABLE_DEMO_ACCOUNTS`) fills the phone ONLY — never the password, never auto-login.
+- **CLARIFICATION (security correction, same phase — no new TD):**
+  - **Password-login rate limiting is DB-backed and CROSS-PROCESS**, not process-local. Its authority is the append-only
+    `SecurityEvent` table (event `password_login_attempt`) — NO new schema/migration — so it survives restarts and is
+    shared across PM2/multi-instance workers. Each attempt is admitted inside ONE transaction that acquires
+    deterministic-ordered Postgres **advisory locks** (no deadlock), counts attempts in the window, denies at the limit,
+    else records exactly one attempt — so concurrent attempts cannot overshoot the bucket. The raw phone is **never** a
+    rate-limit key: only an **HMAC-SHA256**(`AUTH_OTP_PEPPER`, domain-separated) fingerprint is stored; a malformed phone
+    is IP-limited only (no global invalid-phone bucket). The in-memory limiter is **NOT** the password-login authority
+    (retained only for `otp/request`).
+  - **Password reset is ATOMIC.** Credential replacement + revoke-all `AuthSession` + revoke-all `RefreshToken` + the
+    authoritative `password_reset_success` / `all_sessions_revoked` events all commit or roll back in ONE transaction
+    (shared `SessionsService.revokeAllUserSessionsInTransaction`, reused by logout-all). A stolen refresh can never
+    survive a reset, and a credential change never commits if revocation fails. Password hashing stays outside the tx.
+- **Status:** ACCEPTED (implemented Phase 2.2C)
+
 > Bu hujjat D-04'dagi "hali tanlanmagan" ro'yxatini bosqichma-bosqich yopib boradi.
 > Faqat haqiqatan qabul qilingan qarorlar ACCEPTED; product tasdig'ini kutayotganlar bu yerda yozilmaydi ([OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) va [AUTH_ARCHITECTURE.md](AUTH_ARCHITECTURE.md) §23).
 
