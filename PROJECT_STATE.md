@@ -6,7 +6,7 @@
 ## Repository pointers (verified 2026-08-22)
 | Repo | Role | Branch | HEAD SHA (at verification) | Working tree |
 |---|---|---|---|---|
-| `zeten-nz/izlan` | code / schema / migrations / tests + `web/` | `phase/2.2E` | `016400c63549ce7237972d4fd5f33b9100745573` (init `44a0bfb` + provenance/pedagogy correction; base `main` `a977c358`, which merged 2.2D) | clean |
+| `zeten-nz/izlan` | code / schema / migrations / tests + `web/` | `phase/2.2E` | `e1112e0e2ed429de9ffa5a47f1d86c09c8f15164` (init `44a0bfb` → provenance/pedagogy `016400c` → final reconciliation; base `main` `a977c358`, which merged 2.2D) | clean |
 | `zeten-nz/izla-docs` | product/architecture decisions, checkpoints | `phase/2.2E` | `phase/2.2E` (final SHA in PR; base `main` `2bdd590`, which merged 2.2D docs) | clean |
 
 **Phase 2.2D is MERGED / CLOSED** — runtime `main` `a977c35816d5642a93eb071b1ad56d71aba6400d`, docs `main`
@@ -23,7 +23,7 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
 
 ## Current position
 - **Last completed:** Phase **2.2E** — English A1 Pilot Content v1. Result: **TECHNICAL PASS — implementation complete on
-  branch `phase/2.2E` (code `016400c`); PEDAGOGICAL OWNER/METHODIST REVIEW PENDING (not merged)**. The **first real
+  branch `phase/2.2E` (code `e1112e0`); PEDAGOGICAL OWNER/METHODIST REVIEW PENDING (not merged)**. The **first real
   educational content pack**: English → General English → A1 → A1 Foundations, **4 Topics / 12 Lessons / 98 Activities /
   13 Skills** (~176 min), teaching language **Uzbek**, target **English**. Content lives in the runtime repo at
   `content/pilots/english-a1/v1/` (4 `izlan-topic-content/v1` packages + `manifest.json` + `README.md`) — authoring source
@@ -37,7 +37,9 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
   `provenance.source` HUMAN/AI_ASSISTED/AI_GENERATED, omitted→HUMAN, part of documentHash, no schema) so the pilot
   persists **`AI_ASSISTED`** (not HUMAN) while human review remains required, and fixed the pedagogy (Lesson 06 full
   0–100/phone digit-reading + both-skill mastery; Lessons 07/08 no longer pre-use have/has; Lesson 12 real objective
-  cumulative retrieval). **No schema change, no migration** (migrations **23**, CHECK **46**); nothing auto-imports into
+  cumulative retrieval). A **final surgical reconciliation** (`e1112e0`, current HEAD) made `provenance: null` reject as
+  `IMPORT_INVALID_DOCUMENT` (never silent HUMAN; IMP-PROV-06) and pinned the Lesson 12 cumulative ActivitySkill mapping.
+  **No schema change, no migration** (migrations **23**, CHECK **46**); nothing auto-imports into
   dev/prod and publication remains a manual CMS step after human review. The content is an **AI-assisted draft** — not
   pedagogically approved, not CEFR-certified. See [ENGLISH_A1_PILOT.md](ENGLISH_A1_PILOT.md) and
   [checkpoints/2.2E.md](checkpoints/2.2E.md). Latest TD is **TD-254** (amends TD-253). The learner web app is a 3.x concern.
@@ -130,13 +132,13 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
 - **Workflow:** the two-repo phase/checkpoint/SHA workflow is adopted (rules in `izlan/CLAUDE.md`).
 - **No future phase is marked complete.** No implementation phase starts until the owner supplies its specific prompt.
 
-## Baseline (phase/2.2E @ `016400c`; izlan `main` `a977c358`)
+## Baseline (phase/2.2E @ `e1112e0`; izlan `main` `a977c358`)
 | Metric | Value |
 |---|---|
 | migrations | 23 (unchanged; last: `20260822120000_password_credential`, TD-252; 2.2E adds NO schema/migration) |
-| backend unit tests | 503 (2.2E: +11 PILOT + aggregate, +4 provenance/PILOT-PROV) |
-| backend e2e tests | 598 (2.2E: +5 PILOT-E2E/IMPORT-SAFETY/PUBLISH/LEARNER/SCORING, +4 IMP-PROV) |
-| backend total tests | **1101** (503 + 598) |
+| backend unit tests | 505 (2.2E: +11 PILOT + aggregate, +4 provenance/PILOT-PROV, +2 IMP-PROV-06/PILOT-12-CUMULATIVE) |
+| backend e2e tests | 599 (2.2E: +5 PILOT-E2E/IMPORT-SAFETY/PUBLISH/LEARNER/SCORING, +5 IMP-PROV-01..06) |
+| backend total tests | **1104** (505 + 599) |
 | web tests (Vitest) | 52 (unchanged in 2.2E) |
 | named CHECK constraints | 46 (unchanged; no schema change) |
 | drift | clean (empty diff / exit 0 on izlan_dev + izlan_test) |
