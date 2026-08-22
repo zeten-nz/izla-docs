@@ -6,7 +6,7 @@
 ## Repository pointers (verified 2026-08-22)
 | Repo | Role | Branch | HEAD SHA (at verification) | Working tree |
 |---|---|---|---|---|
-| `zeten-nz/izlan` | code / schema / migrations / tests + `web/` | `phase/2.2D` | `1dc5a2cda24be010af0f9932e79f2c1eee8ec063` (base `main` `42d0b79`, which merged 2.2C PR #8) | clean |
+| `zeten-nz/izlan` | code / schema / migrations / tests + `web/` | `phase/2.2D` | `8defe5b97a226d334d046c7152ab3e5f4ff86f0b` (init `1dc5a2c` + correction; base `main` `42d0b79`, which merged 2.2C PR #8) | clean |
 | `zeten-nz/izla-docs` | product/architecture decisions, checkpoints | `phase/2.2D` | `phase/2.2D` (final SHA in PR; base `main` `ad2ca37`, which merged 2.2C docs PR #11) | clean |
 
 \* Phase **2.2B** (review + publishing + preview + readiness + learner visibility) implemented on branch `phase/2.2B` —
@@ -36,9 +36,15 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
   **not** authorization). **No Prisma schema change, no migration** (migrations stay **23**, CHECK **46**). The CMS
   (`izlan/web`) adds a polished 3-step importer ("Import qilish", author-gated) — `.json` only, ≤5 MiB, **safe JSON.parse,
   no eval/HTML, no localStorage/sessionStorage/IndexedDB persistence, never renders `answerKey`**, dry-run first, apply
-  re-runs the server authority with duplicate-submit protection and no fake progress. TD-253 added; living doc
-  [BULK_IMPORT.md](BULK_IMPORT.md); see [checkpoints/2.2D.md](checkpoints/2.2D.md). ActivityMedia upload, the English A1
-  pilot (→ 2.2E), and the learner web app (→ 3.x) remain NOT built.
+  re-runs the server authority with duplicate-submit protection and no fake progress. An **owner-review correction**
+  (`8defe5b`, same branch, TD-253 clarified — no new TD/schema) hardened three boundaries: the **5 MiB limit is now
+  import-route-only** (ordinary API back to 1 MiB, enforced at the Fastify body-parser boundary via one shared adapter
+  factory); **dry-run now rejects every deterministic package-local conflict** (duplicate declared skill name, duplicate
+  reference-list items, and prerequisite keys correctly following `contentKey` — not skill-code — syntax); and **apply
+  persistence is batched/chunked** (`createMany`/`createManyAndReturn`, stable-key correlation, 1000-row chunks) with new
+  **aggregate relationship caps** (LessonSkill 10k / ActivitySkill 25k / prerequisites 10k) rejected before the write tx.
+  TD-253 added; living doc [BULK_IMPORT.md](BULK_IMPORT.md); see [checkpoints/2.2D.md](checkpoints/2.2D.md). ActivityMedia
+  upload, the English A1 pilot (→ 2.2E), and the learner web app (→ 3.x) remain NOT built.
 - **Prior:** Phase **2.2C** — Methodist CMS Web Application. Result: PASS — **merged to `main` (PR #8, `42d0b79`)**. The
   **first Izlan web app** lives at **`izlan/web`** (Next.js
   App Router + TypeScript + React + Tailwind), a professional Methodist/Admin content CMS consuming the 2.2A/2.2B staff
@@ -101,13 +107,13 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
 - **Workflow:** the two-repo phase/checkpoint/SHA workflow is adopted (rules in `izlan/CLAUDE.md`).
 - **No future phase is marked complete.** No implementation phase starts until the owner supplies its specific prompt.
 
-## Baseline (phase/2.2D @ `1dc5a2c`; izlan `main` `42d0b79`)
+## Baseline (phase/2.2D @ `8defe5b`; izlan `main` `42d0b79`)
 | Metric | Value |
 |---|---|
 | migrations | 23 (unchanged; last: `20260822120000_password_credential`, TD-252; 2.2D adds NO schema/migration) |
-| backend unit tests | 484 (2.2D: +5 import-parser) |
-| backend e2e tests | 579 (2.2D: +17 IMP-V/S/A/DAG/AUTH/AUDIT incl DAG-concurrency) |
-| backend total tests | **1063** (484 + 579) |
+| backend unit tests | 488 (2.2D: +5 import-parser, +4 correction) |
+| backend e2e tests | 589 (2.2D: +17 IMP-V/S/A/DAG/AUTH/AUDIT; +10 correction IMP-BODY/IMP-CONSISTENCY/IMP-SCALE) |
+| backend total tests | **1077** (488 + 589) |
 | web tests (Vitest) | 52 (2.2D: +10 WEB-IMP-01..12) |
 | named CHECK constraints | 46 (unchanged; no schema change) |
 | drift | clean (empty diff / exit 0 on izlan_dev + izlan_test) |

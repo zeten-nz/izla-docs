@@ -63,8 +63,18 @@ malformed payloads are rejected. **Server-owned fields are forbidden** in the do
 `MASTERY_TEST`). Every other type → `IMPORT_ACTIVITY_TYPE_UNSUPPORTED`. Payloads are validated by the same
 `validateActivityPayloadForAuthoring` used by single-item authoring (no second parser).
 
-**Limits:** body **5 MiB** (Fastify), ≤200 skills, ≤250 lessons, ≤5000 activities, ≤100 skillRefs/lesson,
-≤50 skillRefs/activity, ≤50 prereqs/lesson → `IMPORT_LIMIT_EXCEEDED`.
+**Per-item limits:** ≤200 skills, ≤250 lessons, ≤5000 activities, ≤100 skillRefs/lesson, ≤50 skillRefs/activity,
+≤50 prereqs/lesson → `IMPORT_LIMIT_EXCEEDED`.
+
+**Aggregate relationship caps** (safety bounds, counted as UNIQUE references after structural validation, rejected with
+`IMPORT_LIMIT_EXCEEDED` **before** the write transaction): ≤10 000 LessonSkill, ≤25 000 ActivitySkill, ≤10 000
+prerequisites — because the per-item limits can otherwise multiply into pathological totals (5000 activities × 50 skill
+refs = 250 000 rows).
+
+**Body boundary:** the ordinary API keeps the small default JSON ceiling (**1 MiB**); ONLY the two import routes accept
+up to **5 MiB**, raised as a native Fastify route `bodyLimit` via ONE shared adapter factory
+(`src/bootstrap/http-adapter.ts`, used by production and e2e alike). An oversized body is refused with **413 at the
+Fastify body-parser boundary — before it is buffered or parsed** (not a post-parse or Content-Length-only check).
 
 Sample that validates cleanly: [`examples/izlan-topic-content.v1.json`](../izlan/examples/izlan-topic-content.v1.json)
 (in the runtime repo).
@@ -73,10 +83,11 @@ Sample that validates cleanly: [`examples/izlan-topic-content.v1.json`](../izlan
 
 | Entity | Reference | Rule |
 |---|---|---|
-| Skill | Subject-scoped `code` | Reuse existing **ACTIVE** by code; declared code with conflicting name → `IMPORT_SKILL_CONFLICT`; ARCHIVED → `IMPORT_SKILL_ARCHIVED`; referenced-but-not-declared-nor-existing → `IMPORT_SKILL_NOT_FOUND`. No cross-Subject lookup. |
-| Lesson | global `contentKey` | **Create-only.** Existing key → HARD `IMPORT_CONTENT_KEY_EXISTS` (never overwrite/adopt). Duplicate within the document → `IMPORT_CONTENT_KEY_DUPLICATE`. |
-| Prerequisite | `contentKey` | Target may be a new lesson in the same document OR an existing same-Subject lesson (DRAFT/PUBLISHED ok, ARCHIVED → `IMPORT_PREREQUISITE_ARCHIVED`, missing → `IMPORT_PREREQUISITE_NOT_FOUND`). Cross-Subject → `IMPORT_PREREQUISITE_SUBJECT_MISMATCH`. Cycle over existing + batch edges → `IMPORT_PREREQUISITE_CYCLE`. |
-| Skill mapping | `skillCodes` | `lesson.skillCodes` → LessonSkill, `activity.skillCodes` → ActivitySkill; resolved in the destination Subject, ACTIVE only, de-duplicated. |
+| Skill | Subject-scoped `code` | Reuse existing **ACTIVE** by code; declared code with conflicting name → `IMPORT_SKILL_CONFLICT`; ARCHIVED → `IMPORT_SKILL_ARCHIVED`; referenced-but-not-declared-nor-existing → `IMPORT_SKILL_NOT_FOUND`. **Two declared skills with different codes but the same normalized name → `IMPORT_SKILL_DUPLICATE`** (the DB enforces `@@unique([subjectId, name])`). No cross-Subject lookup. |
+| Lesson | global `contentKey` (`CONTENT_KEY_RE`, ≤200) | **Create-only.** Existing key → HARD `IMPORT_CONTENT_KEY_EXISTS` (never overwrite/adopt). Duplicate within the document → `IMPORT_CONTENT_KEY_DUPLICATE`. |
+| Prerequisite | `contentKey` (SAME `CONTENT_KEY_RE`, ≤200 syntax as Lesson.contentKey — NOT skill-code rules) | Target may be a new lesson in the same document OR an existing same-Subject lesson (DRAFT/PUBLISHED ok, ARCHIVED → `IMPORT_PREREQUISITE_ARCHIVED`, missing → `IMPORT_PREREQUISITE_NOT_FOUND`). Cross-Subject → `IMPORT_PREREQUISITE_SUBJECT_MISMATCH`. Cycle over existing + batch edges → `IMPORT_PREREQUISITE_CYCLE`. |
+| Skill mapping | `skillCodes` | `lesson.skillCodes` → LessonSkill, `activity.skillCodes` → ActivitySkill; resolved in the destination Subject, ACTIVE only. |
+| Reference lists | `skillCodes` / `prerequisiteContentKeys` | **Strict: duplicate items are rejected** (`IMPORT_INVALID_DOCUMENT`) — the parser guarantees de-duplicated lists, so no junction unique conflict surfaces at apply. Silent `Set()` dedup is not the contract. |
 
 ## Endpoints
 
@@ -95,14 +106,21 @@ NOT required. An out-of-scope / non-existent Topic returns **`CONTENT_NOT_FOUND`
 
 `apply()` runs as ONE Prisma transaction, all-or-nothing:
 
+0. **Preliminary** cheap Topic→Subject + `SubjectAssignment` check BEFORE the expensive parse (so an unassigned actor
+   cannot trigger deep validation of a large foreign-Topic document) — then the authoritative check re-runs in the tx.
 1. Resolve + authorize the Topic's Subject (`SubjectScopeService.requireScope`).
 2. Take the **destination Subject row `FOR UPDATE`** — the SAME graph-serialization authority as the 2.2A-3 prerequisite
    writer, so a concurrent prerequisite write and an import cannot interleave into a cycle.
 3. **Re-run full validation** against the current DB snapshot (the dry-run is never trusted).
-4. Create Skills (new only) → Lessons → Revisions (v1) → Activities (position = array index) → LessonSkill/ActivitySkill
-   (de-duplicated) → LessonPrerequisite edges, validating the whole existing + proposed edge set for cycles.
-5. Write **ONE `content.import.apply` StaffAudit** and commit.
+4. **Batched persistence** (`persistBatch`): Skills (new only) → Lessons → Revisions (v1) → Activities (position = array
+   index) → LessonSkill → ActivitySkill → LessonPrerequisite edges, each written with `createMany` / `createManyAndReturn`
+   — **no per-row round trips**. Ids are correlated by **stable business keys** (skill code, contentKey, lessonId+version,
+   revisionId+position), never by database return ordering. Large junction inserts are **chunked** (1000 rows/insert),
+   all inside this transaction.
+5. Write **ONE `content.import.apply` StaffAudit** (counts derived from the exact rows written, matching the summary) and
+   commit.
 
+A bounded 30 s transaction timeout gives headroom for a near-limit batched package — it is not a substitute for batching.
 A unique-constraint race (e.g. a contentKey created by someone else between dry-run and apply) surfaces as
 `IMPORT_CONFLICT` (409). The import service uses domain/repo primitives only — it never calls HTTP or any publication
 service.
@@ -154,7 +172,8 @@ service.
 
 | Concern | File |
 |---|---|
-| Contract, limits, hash | `src/content-import/import-contract.ts` |
+| Route-scoped body limit (shared adapter factory) | `src/bootstrap/http-adapter.ts` (used by `src/main.ts` + e2e) |
+| Contract, limits (incl. aggregate caps), hash | `src/content-import/import-contract.ts` |
 | Strict parser | `src/content-import/import-parser.ts` (+ `import-parser.spec.ts`) |
 | Pure resolution/validation | `src/content-import/import-validator.ts` |
 | Read snapshot | `src/content-import/import.repository.ts` |

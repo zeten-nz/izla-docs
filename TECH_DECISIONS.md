@@ -716,6 +716,35 @@ without ever weakening the per-mutation authorization, lifecycle, or DAG invaria
   written to localStorage/sessionStorage/IndexedDB. Dry-run first; apply re-runs the server authority (dry-run not trusted)
   with duplicate-submit protection and no fake progress percentage; the summary/error list never renders `answerKey`.
   UI i18n = chrome only (uz default / ru / en).
+- **CLARIFICATION (owner-review correction, same phase — no new TD):**
+  - **The 5 MiB ceiling is import-route-only.** The ordinary API keeps the small default JSON body ceiling (**1 MiB**);
+    ONLY the two import routes accept up to 5 MiB, raised as a **native Fastify route `bodyLimit`** via an `onRoute` hook
+    in ONE shared adapter factory (`src/bootstrap/http-adapter.ts`) used by both production and e2e. It is enforced at the
+    Fastify body-parser boundary — an oversized body is refused with **413 before it is buffered or JSON-parsed** (never a
+    post-parse size check, a global limit, a Content-Length-only check, or trust in the frontend file-size check).
+  - **Dry-run rejects every deterministic package-local conflict apply would hit.** The DB enforces both
+    `@@unique([subjectId, code])` and `@@unique([subjectId, name])` for Skills, so validate now rejects two declared
+    Skills that share a normalized **name** (not only a code) — `IMPORT_SKILL_DUPLICATE`. **Duplicate items** inside
+    `skillCodes`, an activity's `skillCodes`, or `prerequisiteContentKeys` are rejected (`IMPORT_INVALID_DOCUMENT`): the
+    strict parser guarantees de-duplicated lists, so silent `Set()` dedup is no longer the public contract and no
+    LessonSkill/ActivitySkill/LessonPrerequisite unique conflict can surface at write time. A **valid=true** dry-run now
+    means no deterministic package-local uniqueness problem remains.
+  - **Prerequisite content keys follow `contentKey` syntax** (`CONTENT_KEY_RE`, ≤200), via a dedicated normalizer distinct
+    from the ≤80 skill-code one — so a valid 120-character `contentKey` is also a valid prerequisite reference.
+  - **Apply persistence is batched/chunked, not row-by-row.** Skills, Lessons, revisions, Activities, LessonSkill,
+    ActivitySkill, and prerequisites are each written with `createMany` / `createManyAndReturn`; ids are correlated by
+    **stable business keys** (skill code, contentKey, lessonId+version, revisionId+position) — never database return
+    ordering. Large junction inserts are **chunked** (1000 rows/insert), all inside the SAME transaction (no partial
+    commit, no queue, no Redis). A bounded 30 s transaction timeout is headroom for a near-limit package, NOT a substitute
+    for batching.
+  - **Aggregate relationship caps** (implementation safety bounds): `maxLessonSkillMappingsTotal = 10 000`,
+    `maxActivitySkillMappingsTotal = 25 000`, `maxPrerequisitesTotal = 10 000`. UNIQUE references are counted after
+    structural validation; exceeding any cap → `IMPORT_LIMIT_EXCEEDED` **before** the write transaction opens. The
+    dry-run summary counts now deterministically match the rows apply writes.
+  - **Authorization order hardening:** apply performs a cheap preliminary Topic→Subject + `SubjectAssignment` check
+    **before** the expensive parse (so an unassigned `content.author` actor cannot make the server deeply validate a large
+    foreign-Topic document), then STILL re-checks authoritatively inside the transaction. No schema/migration; migrations
+    stay 23, CHECK 46.
 - **Status:** ACCEPTED (implemented Phase 2.2D)
 
 > Bu hujjat D-04'dagi "hali tanlanmagan" ro'yxatini bosqichma-bosqich yopib boradi.
