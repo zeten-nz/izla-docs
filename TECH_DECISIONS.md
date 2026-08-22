@@ -621,6 +621,37 @@ Profile/onboarding foundation ([LEARNER_ONBOARDING_IMPLEMENTATION.md](LEARNER_ON
   migration. Backend enum values are never localized (only their display labels).
 - **Status:** ACCEPTED (implemented Phase 2.2C)
 
+### TD-252 — Phone + Password Primary Authentication (ACCEPTED, implemented Phase 2.2C)
+**Supersedes the earlier passwordless phone+OTP *login* decision** (D-31 / AUTH_ARCHITECTURE §1). OTP remains, but is no
+longer the ordinary login mechanism. Historical checkpoints are NOT rewritten — this is the current, load-bearing decision.
+- **Identity vs secret:** `User.phone` stays the unique, canonical E.164 primary login identifier (no email/username login).
+  The authentication SECRET lives in a dedicated 1:1 **`PasswordCredential`** (`user_id` PK, `password_hash`), kept OUT of
+  the User identity row so future Passkey/TOTP stays clean. Migration **23** (`20260822120000_password_credential`) — no
+  destructive change; existing OTP-only users have NO credential row and cannot password-login until one is set/reset.
+- **Password:** Argon2id via one hashing port (`@node-rs/argon2`, 19 MiB / t=2 / p=1); only the encoded PHC hash is stored
+  (never plaintext / reversible / separate salt / logs / audit / security-event metadata). Policy = **8..128 chars, no
+  composition rules, never trimmed**; the frontend mirrors the same bounds.
+- **Login:** `POST /api/auth/login {phone,password}` → normalize phone → resolve User + PasswordCredential → verify Argon2id
+  → assert ACTIVE → reuse the EXISTING session/token issuance (RS256 access JWT + rotating opaque refresh token + HttpOnly
+  cookie), stamp `lastLoginAt`, emit a safe security event. **Enumeration-safe + timing-equalized:** unknown phone / no
+  credential / wrong password all return ONE generic `401 AUTH_INVALID_CREDENTIALS`; SUSPENDED/DEACTIVATED denied only after
+  a correct password. Per-IP + per-canonical-phone rate limit via the existing limiter (no new subsystem).
+- **OTP after amendment:** purposes are **REGISTRATION / PASSWORD_RESET / PHONE_CHANGE** (string field, no enum migration).
+  Registration = phone → OTP → chosen password → atomic `User + UserProfile + LEARNER + PasswordCredential` → session; a
+  duplicate phone never creates a second account; an OTP for one phone can never create credentials for another. Password
+  reset = phone → reset OTP → new password → credential replaced **and all of that user's sessions revoked** (a stolen
+  refresh must not survive a reset). Existing OTP hashing / rate-limiting / anti-enumeration unchanged.
+- **Staff = same login.** ADMIN and METHODIST use the same `/auth/login`; access is decided by `/auth/me` + the capability
+  endpoint. The frontend never trusts "this phone is admin"; RBAC stays the DB authority.
+- **Session architecture preserved** (RS256 JWT, rotating refresh + reuse detection, HttpOnly cookie, server-side revoke,
+  account-status checks, RBAC) — not weakened. Web: access token stays memory-only; refresh single-flight unchanged.
+- **Dev-only tooling:** `ConsoleSmsAdapter` (`SMS_DRIVER=console`, prints code only; production startup FAILS) for local
+  registration/reset when no SMS provider is configured; `npm run db:seed:demo` (prod-refused, `ALLOW_DEMO_SEED=true`,
+  env-driven passwords hashed via the production hasher, idempotent) seeds demo Admin/Methodist + `english-demo` subject
+  assigned to both (exercises the real authorization model — ADMIN has no assignment bypass). A dev login helper
+  (`NEXT_PUBLIC_ENABLE_DEMO_ACCOUNTS`) fills the phone ONLY — never the password, never auto-login.
+- **Status:** ACCEPTED (implemented Phase 2.2C)
+
 > Bu hujjat D-04'dagi "hali tanlanmagan" ro'yxatini bosqichma-bosqich yopib boradi.
 > Faqat haqiqatan qabul qilingan qarorlar ACCEPTED; product tasdig'ini kutayotganlar bu yerda yozilmaydi ([OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) va [AUTH_ARCHITECTURE.md](AUTH_ARCHITECTURE.md) §23).
 

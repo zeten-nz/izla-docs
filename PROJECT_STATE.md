@@ -6,7 +6,7 @@
 ## Repository pointers (verified 2026-08-21)
 | Repo | Role | Branch | HEAD SHA (at verification) | Working tree |
 |---|---|---|---|---|
-| `zeten-nz/izlan` | code / schema / migrations / tests + `web/` | `phase/2.2C` | `57530d5809831ef60fe338893b29ad973a08b3f3` (base `main` `14a6d5c`) | clean |
+| `zeten-nz/izlan` | code / schema / migrations / tests + `web/` | `phase/2.2C` | `3e7f52400d6337be237bbffbcf0807cde7eac83f` (base `main` `14a6d5c`) | clean |
 | `zeten-nz/izla-docs` | product/architecture decisions, checkpoints | `phase/2.2C` | `phase/2.2C` (final SHA in PR) | clean |
 
 \* Phase **2.2B** (review + publishing + preview + readiness + learner visibility) implemented on branch `phase/2.2B` —
@@ -20,7 +20,7 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
 
 ## Current position
 - **Last completed:** Phase **2.2C** — Methodist CMS Web Application. Result: PASS — **complete on branch `phase/2.2C`
-  (code `57530d5`), OWNER REVIEW PENDING (not merged)**. The **first Izlan web app** lives at **`izlan/web`** (Next.js
+  (code `3e7f524`), OWNER REVIEW PENDING (not merged)**. The **first Izlan web app** lives at **`izlan/web`** (Next.js
   App Router + TypeScript + React + Tailwind), a professional Methodist/Admin content CMS consuming the 2.2A/2.2B staff
   APIs: subject/hierarchy/lesson/revision/activity/skill/prerequisite authoring, readiness, learner preview, and the
   review→publish→takedown workflow. **Auth:** access token **memory-only**, HttpOnly rotating refresh cookie, **single-flight
@@ -34,8 +34,13 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
   added a 2026 Izlan visual identity (refined tokens, `next/font` Inter with Cyrillic), a reduced-motion-aware Framer-Motion
   system, a collapsible animated sidebar + ⌘K command palette, and **UI i18n (uz default / ru / en — chrome only; the
   content model is unchanged, no schema/migration)**; functional/OCC/security behavior preserved. TD-251 added (design +
-  i18n folded in). See [checkpoints/2.2C.md](checkpoints/2.2C.md) and the living [METHODIST_CMS.md](METHODIST_CMS.md).
-  ActivityMedia upload, bulk import (→ 2.2D), and the learner web app (→ 3.x) are NOT built.
+  i18n folded in). A further **owner auth amendment** (TD-252, same branch) made **phone + PASSWORD the primary login**
+  (OTP demoted to registration / password-reset), adding a 1:1 `PasswordCredential` (Argon2id, separate from identity) via
+  **migration 23** while preserving the entire session architecture (RS256 JWT, rotating refresh + reuse detection, HttpOnly
+  cookie, revoke, status checks, RBAC); login is enumeration-safe; reset revokes sessions; staff use the same login. See
+  [checkpoints/2.2C.md](checkpoints/2.2C.md), [AUTH_ARCHITECTURE.md](AUTH_ARCHITECTURE.md) (amendment banner), and the
+  living [METHODIST_CMS.md](METHODIST_CMS.md). ActivityMedia upload, bulk import (→ 2.2D), and the learner web app (→ 3.x)
+  are NOT built.
 - **Prior:** Phase **2.2B** — Review + Publishing + Preview + Readiness + Learner Visibility (PASS; `content.publish` +
   self-publish, top-down hierarchy publish, atomic Lesson-serialized publication + pointer switch, idempotent republish,
   canonical readiness, centralized visibility, urgent takedown gating every learner surface, `PREREQUISITE_SUBJECT_MISMATCH`).
@@ -65,7 +70,8 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
   **TD-240..245** ([CONTENT_AUTHORING_RECON.md](CONTENT_AUTHORING_RECON.md) §13a); **TD-246** the 2.2A-R registry;
   **TD-247** 2.2A-1 authz/concurrency; **TD-248** 2.2A-2 draft revision/activity; **TD-249** 2.2A-3 skill mapping &
   prerequisite DAG; **TD-250** the 2.2B review/publication/visibility decision; **TD-251** the 2.2C Methodist CMS web
-  architecture (`izlan/web`, memory-only token, single-flight refresh, capability endpoint, OCC save model, safe preview).
+  architecture (`izlan/web`, memory-only token, single-flight refresh, capability endpoint, OCC save model, safe preview);
+  **TD-252** phone + password primary authentication (Argon2id `PasswordCredential`, OTP → registration/reset, migration 23).
   Content track is independent of Telegram.
 - **Payment provider track:** **PAUSED** (no CLICK/Payme merchant application, merchant docs, sandbox, or test
   credentials). Completed payment architecture is intact and must not be modified. (Telegram Stars is a *future*
@@ -73,14 +79,14 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
 - **Workflow:** the two-repo phase/checkpoint/SHA workflow is adopted (rules in `izlan/CLAUDE.md`).
 - **No future phase is marked complete.** No implementation phase starts until the owner supplies its specific prompt.
 
-## Baseline (phase/2.2C @ `57530d5`; izlan `main` `14a6d5c` until the PR merges)
+## Baseline (phase/2.2C @ `3e7f524`; izlan `main` `14a6d5c` until the PR merges)
 | Metric | Value |
 |---|---|
-| migrations | 22 (last: `20260821110000_content_schema_hardening`; **no new migration in 2.2B or 2.2C**) |
-| backend unit tests | 474 (unchanged in 2.2C) |
-| backend e2e tests | 547 (2.2C +5: CMS-SESSION-01..05 capability endpoint) |
-| backend total tests | **1021** (474 + 547) |
-| web tests (Vitest) | 33 (WEB-01..14 auth/OCC/serializers/preview/workflow + I18N-01..06 locale/chrome + UI-A11Y-01..05 modal focus/reorder) |
+| migrations | 23 (last: `20260822120000_password_credential`, TD-252; 2.2B/CMS/design added none) |
+| backend unit tests | 479 (2.2C: +5 PWD hasher/policy) |
+| backend e2e tests | 553 (2.2C: +5 CMS-session; +auth register/login/reset labeled cases; +6 demo-seed) |
+| backend total tests | **1032** (479 + 553) |
+| web tests (Vitest) | 42 (WEB-01..14 + I18N-01..06 + UI-A11Y-01..05 + WEB-AUTH-PWD-01..07/DEMO-WEB-01..03 login) |
 | named CHECK constraints | 46 (unchanged) |
 | drift | clean (empty diff on izlan_dev + izlan_test) |
 | web app | `izlan/web` — Next.js 15.5.23 · typecheck/lint clean · `next build` ok · `npm ci` reproduces |

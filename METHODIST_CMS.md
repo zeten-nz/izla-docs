@@ -74,6 +74,14 @@
   are unchanged (no `titleUz/Ru/En`, no translation tables, no schema/migration). Backend enum values are never localized —
   only their display labels (e.g. `PUBLISHED` → Nashr qilingan / Опубликовано / Published).
 
+## Authentication (TD-252)
+- **Login = phone + password** (`POST /auth/login`). `/staff/login` has an accessible show/hide password toggle
+  (`autocomplete=current-password`), a **forgot-password OTP recovery** flow (phone → reset code → new password → sign in),
+  and a dev-only demo helper (`NEXT_PUBLIC_ENABLE_DEMO_ACCOUNTS`, never production) that fills the **phone only**.
+- OTP is recovery/registration only — not login. Access token stays **memory-only**; the HttpOnly rotating refresh cookie +
+  single-flight refresh are unchanged. Staff use the same `/auth/login` as everyone; RBAC + the capability endpoint decide
+  access. Backend: Argon2id `PasswordCredential` (separate from identity), enumeration-safe login, reset revokes sessions.
+
 ## Interaction accessibility
 - **Activity reorder** uses the canonical dnd-kit pattern: sortable element `setNodeRef`; drag handle `setActivatorNodeRef`
   + attributes/listeners (only the handle is a drag surface). Keyboard drag + accessible up/down alternatives retained.
