@@ -74,6 +74,12 @@
   are unchanged (no `titleUz/Ru/En`, no translation tables, no schema/migration). Backend enum values are never localized —
   only their display labels (e.g. `PUBLISHED` → Nashr qilingan / Опубликовано / Published).
 
+## Interaction accessibility
+- **Activity reorder** uses the canonical dnd-kit pattern: sortable element `setNodeRef`; drag handle `setActivatorNodeRef`
+  + attributes/listeners (only the handle is a drag surface). Keyboard drag + accessible up/down alternatives retained.
+- **Modals** (Dialog + command palette) share `lib/hooks/use-focus-trap.ts`: initial focus inside, `Tab`/`Shift+Tab`
+  containment with wrap, Escape close, and focus restoration to the opener on close. Covered by UI-A11Y-01..05.
+
 ## Deferred / out of scope (as of 2.2C)
 ActivityMedia upload/delivery (→ later), bulk import (→ 2.2D), learner web app (→ 3.x), AI authoring. See
 [PROJECT_STATE.md](PROJECT_STATE.md).
