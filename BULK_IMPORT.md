@@ -148,7 +148,7 @@ service.
 | `IMPORT_ACTIVITY_TYPE_UNSUPPORTED` | 400 | activity type not importable |
 | `IMPORT_ACTIVITY_PAYLOAD_INVALID` | 400 | payload fails authoring validation |
 | `IMPORT_CONTENT_KEY_EXISTS` | 409 | lesson contentKey already exists |
-| `IMPORT_PREREQUISITE_NOT_FOUND` | 409 | prerequisite target not resolvable |
+| `IMPORT_PREREQUISITE_NOT_FOUND` | 400 | prerequisite target not resolvable |
 | `IMPORT_PREREQUISITE_ARCHIVED` | 409 | prerequisite target ARCHIVED |
 | `IMPORT_PREREQUISITE_SUBJECT_MISMATCH` | 409 | prerequisite target in another Subject |
 | `IMPORT_PREREQUISITE_CYCLE` | 409 | edges would form a cycle |
