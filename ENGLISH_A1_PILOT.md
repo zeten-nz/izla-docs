@@ -1,8 +1,8 @@
 # Izlan — English A1 Pilot Content (Phase 2.2E)
 
 > **Mutable pilot record.** The first real educational content pack for Izlan. Implemented Phase **2.2E** on branch
-> `phase/2.2E`. **TECHNICAL PASS — pedagogical owner/Methodist review pending.** No new architecture decision (latest
-> remains **TD-253**). Related: [BULK_IMPORT.md](BULK_IMPORT.md), [CONTENT_MODEL.md](CONTENT_MODEL.md),
+> `phase/2.2E`. **TECHNICAL PASS — pedagogical owner/Methodist review pending.** Adds **TD-254** (bulk-import Activity
+> provenance; amends TD-253). Related: [BULK_IMPORT.md](BULK_IMPORT.md), [CONTENT_MODEL.md](CONTENT_MODEL.md),
 > [METHODIST_CMS.md](METHODIST_CMS.md), [checkpoints/2.2E.md](checkpoints/2.2E.md).
 
 ## Goal
@@ -17,9 +17,9 @@ objective Activity contracts. This is a **pilot**: it does not freeze the full f
   + publishes structurally in the test database via the existing workflow with zero readiness blockers.
 - **Pedagogical:** **AI-ASSISTED DRAFT — OWNER / METHODIST REVIEW PENDING.** Not pedagogically approved, not
   "CEFR certified", not "production content finalized". A human must review the actual lessons before real import/publish.
-- **Provenance:** AI-assisted authoring drafts. Import v1 records `ContentSource = HUMAN` (the importing staff member
-  takes responsibility); v1 accepts no provenance field and real publication is always a manual human step after review.
-  This is consistent with TD-20 (`ContentSource`) because nothing auto-publishes — see *Provenance* below.
+- **Provenance (TD-254):** AI-assisted authoring drafts. Each package declares `provenance.source = AI_ASSISTED`, so
+  every imported Activity persists with `source = AI_ASSISTED` (`aiMetadata = null`). Human review does **not** rewrite
+  the origin; the content still flows through the DRAFT → REVIEW → PUBLISHED workflow before any learner sees it.
 
 ## Languages
 
@@ -62,20 +62,22 @@ Import order matters (later packages reference earlier lessons):
 | # | contentKey | Title | Primary skill | Activities | ~min |
 |---|---|---|---|---|---|
 | 01 | ENG-A1-001-GREETINGS | Salomlashish va tanishuv | ENG-A1-GREETINGS | 8 | 14 |
-| 02 | ENG-A1-002-SUBJECT-PRONOUNS | Kishilik olmoshlari | ENG-A1-SUBJECT-PRONOUNS | 8 | 12 |
+| 02 | ENG-A1-002-SUBJECT-PRONOUNS | Kishilik olmoshlari | ENG-A1-SUBJECT-PRONOUNS | 8 | 14 |
 | 03 | ENG-A1-003-BE-AFFIRMATIVE | To be: am, is, are | ENG-A1-BE-AFFIRMATIVE | 8 | 14 |
-| 04 | ENG-A1-004-BE-NEGATIVE | To be: inkor shakli | ENG-A1-BE-NEGATIVE | 8 | 13 |
-| 05 | ENG-A1-005-BE-QUESTIONS | To be bilan savollar | ENG-A1-BE-QUESTIONS | 8 | 14 |
+| 04 | ENG-A1-004-BE-NEGATIVE | To be: inkor shakli | ENG-A1-BE-NEGATIVE | 8 | 14 |
+| 05 | ENG-A1-005-BE-QUESTIONS | To be bilan savollar | ENG-A1-BE-QUESTIONS | 8 | 15 |
 | 06 | ENG-A1-006-NUMBERS-PERSONAL-INFO | Sonlar va shaxsiy ma'lumot | ENG-A1-NUMBERS / ENG-A1-PERSONAL-INFO | 8 | 15 |
-| 07 | ENG-A1-007-POSSESSIVE-ADJECTIVES | Egalik sifatlari | ENG-A1-POSSESSIVE-ADJECTIVES | 8 | 14 |
-| 08 | ENG-A1-008-FAMILY | Oila a'zolari | ENG-A1-FAMILY-VOCAB | 8 | 13 |
-| 09 | ENG-A1-009-HAVE-HAS | Have va has | ENG-A1-HAVE-HAS | 8 | 13 |
+| 07 | ENG-A1-007-POSSESSIVE-ADJECTIVES | Egalik sifatlari | ENG-A1-POSSESSIVE-ADJECTIVES | 8 | 15 |
+| 08 | ENG-A1-008-FAMILY | Oila a'zolari | ENG-A1-FAMILY-VOCAB | 8 | 14 |
+| 09 | ENG-A1-009-HAVE-HAS | Have va has | ENG-A1-HAVE-HAS | 8 | 14 |
 | 10 | ENG-A1-010-PRESENT-SIMPLE-AFFIRMATIVE | Present Simple: tasdiq gaplar | ENG-A1-PRESENT-SIMPLE-AFFIRMATIVE | 8 | 15 |
 | 11 | ENG-A1-011-PRESENT-SIMPLE-NEGATIVE | Present Simple: inkor gaplar | ENG-A1-PRESENT-SIMPLE-NEGATIVE | 8 | 15 |
-| 12 | ENG-A1-012-PRESENT-SIMPLE-QUESTIONS | Present Simple: savollar va yakuniy takrorlash | ENG-A1-PRESENT-SIMPLE-QUESTIONS | 8 | 15 |
+| 12 | ENG-A1-012-PRESENT-SIMPLE-QUESTIONS | Present Simple: savollar va yakuniy takrorlash | ENG-A1-PRESENT-SIMPLE-QUESTIONS | 10 | 17 |
 
-**96 activities total (48 objective).** Estimated total learning time ≈ **165 minutes**. contentKeys are immutable
-business/import identities.
+**98 activities total (51 objective).** Estimated total learning time = **176 minutes** (computed from the actual
+Activity durations by the pilot validator, not hand-maintained). contentKeys are immutable business/import identities.
+Lesson 12 carries 10 activities — a Present-Simple core plus dedicated objective retrieval of prior skills (have/has,
+possessive, to-be) and a cumulative `multiple_choice` item.
 
 ## Skills (13, Subject-scoped codes)
 
@@ -106,11 +108,15 @@ Each Lesson has 8 activities following (adapted where useful):
 7. `PRACTICE` — a second context
 8. `MASTERY_TEST` — independent check in a fresh context
 
-Lesson 12 shifts two of these to additional `MASTERY_TEST` activities for a cumulative present-simple review plus a
-Markdown recap of the whole pilot. Objective payloads use `single_choice` with exactly one defensible answer and
-plausible beginner-mistake distractors; the objective schema has no feedback field, so explanations live in separate
-`EXPLANATION` activities. Durations: TEXT 1–2, EXPLANATION 2–4, EXAMPLE 1–3, MINI_QUESTION 1, PRACTICE 1–2,
-MASTERY_TEST 1–2 → ~12–15 min/lesson.
+Lesson 12 (10 activities) is the cumulative review: a Present-Simple core (MINI + base-verb mastery + short-answer
+mastery) plus **real objective retrieval** of prior skills — dedicated `PRACTICE` items for have/has, possessives, and
+to-be, and a cumulative `multiple_choice` "select all correct sentences" item — not a passive Markdown recap. Objective
+payloads mostly use `single_choice` with exactly one defensible answer and plausible beginner-mistake distractors, with
+`multiple_choice` where evaluating several sentences is genuinely useful; the objective schema has no feedback field, so
+explanations live in separate `EXPLANATION` activities. `ActivitySkill` maps what each objective actually measures
+(granular evidence), so Lesson 12's `LessonSkill` stays Present-Simple-focused while its activities retrieve prior
+skills. Durations: TEXT 1–2, EXPLANATION 2–4, EXAMPLE 1–3, MINI_QUESTION 1, PRACTICE 1–2, MASTERY_TEST 1–2 →
+~14–17 min/lesson.
 
 ## Activity types & safety
 
@@ -125,7 +131,9 @@ client (verified by the e2e learner-safe smoke).
 
 ## Technical validation
 
-- `npm run content:pilot:a1:validate` → **VALID** (Topics 4, Lessons 12, Activities 96 / objective 48, Skills 13). Uses
+- `npm run content:pilot:a1:validate` → **VALID** (Topics 4, Lessons 12, Activities 98 / objective 51, Skills 13,
+  Estimated duration 176 min; every package provenance AI_ASSISTED; Lesson 06 mastery covers numbers+personal-info;
+  Lesson 12 objective retrieval of have/has + possessive/family + to-be). Uses
   the EXISTING `parseImportDocument` plus cross-file pilot invariants (`src/content-import/pilot/english-a1-pilot.ts`).
 - Unit **PILOT-01..10** (+ aggregate) — manifest shape, zero structural issues, unique contentKeys, skill-name
   consistency, exact prereq chain, per-lesson coverage, objective skill mapping, supported types, no raw HTML, no
@@ -147,13 +155,15 @@ client (verified by the e2e learner-safe smoke).
 This publication happens **only** in `izlan_test`. Nothing auto-imports into dev/prod; `db:seed:system` / `db:seed:demo`
 are unchanged.
 
-## Provenance
+## Provenance (TD-254)
 
-The pilot files are AI-assisted drafts. The v1 importer records `ContentSource = HUMAN` and accepts no provenance field
-(v1 intentionally supports only markdown + objective, no `source`/AI fields). This does **not** conflict with TD-20
-(`ContentSource` — no publish without review) because in this pipeline a human staff member imports the content and a
-human Methodist reviews and publishes it manually; nothing is auto-published. Real import/publication of this pilot
-**requires** human review first. No `CONTENT_PROVENANCE_GAP`.
+The pilot files are AI-assisted drafts, and they say so: each package declares `provenance.source = AI_ASSISTED`. The
+importer persists that source on **every** imported Activity (`aiMetadata = null`) — it no longer forces `HUMAN`.
+Provenance is origin, not a review stamp: **human review does not rewrite it.** AI-assisted content keeps its `source`
+and still flows through the existing DRAFT → REVIEW → PUBLISHED workflow before any learner sees it, satisfying TD-20
+(no publish without review). The optional `provenance.source` is the minimal accepted provenance authority; provider/
+model `aiMetadata` remains deferred (not accepted in v1). See [TD-254](TECH_DECISIONS.md) and
+[BULK_IMPORT.md](BULK_IMPORT.md).
 
 ## Owner / Methodist review checklist
 

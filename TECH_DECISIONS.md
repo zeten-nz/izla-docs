@@ -747,6 +747,28 @@ without ever weakening the per-mutation authorization, lifecycle, or DAG invaria
     stay 23, CHECK 46.
 - **Status:** ACCEPTED (implemented Phase 2.2D)
 
+### TD-254 — Bulk Import Activity Provenance v1 (ACCEPTED, implemented Phase 2.2E)
+**Amends TD-253** (does not rewrite it — TD-253 remains the historical authority for 2.2D). Motivated by the 2.2E pilot:
+the bulk importer previously persisted every imported Activity as `ContentSource.HUMAN`, which corrupted the provenance
+of AI-assisted content. Per DATA_MODEL_CORE / TD-20, `Activity.source` (`HUMAN` / `AI_GENERATED` / `AI_ASSISTED`) is
+**provenance** used for review filtering and quality analysis — a human importing or reviewing content does **not**
+rewrite its origin. This is a minimal, backward-compatible contract extension (owner-authorized).
+- **Optional package-level provenance.** `izlan-topic-content/v1` gains an OPTIONAL root field
+  `{ "provenance": { "source": "HUMAN" | "AI_ASSISTED" | "AI_GENERATED" } }`. **Omitted → HUMAN** (backward compatible
+  with existing 2.2D documents). STRICT: the only field is `source`, whose value must be an exact `ContentSource` enum;
+  an unknown field inside `provenance` or an invalid `source` → `IMPORT_INVALID_DOCUMENT`. Arbitrary `aiMetadata` is
+  **NOT** accepted in v1 and remains **null** — provider/model metadata stays deferred.
+- **All Activities inherit the package source.** Import persistence uses the normalized package `provenance.source` for
+  every Activity in the package (the hard-coded `HUMAN` is removed). `aiMetadata` stays null.
+- **Provenance participates in `documentHash`.** The canonical hash now covers `provenance`, so the same educational
+  content hashes differently under HUMAN vs AI_ASSISTED.
+- **Human review does not erase AI provenance.** AI-assisted/AI-generated content keeps its `source` and still flows
+  through the existing DRAFT → REVIEW → PUBLISHED workflow before any learner sees it. The English A1 pilot packages
+  declare `AI_ASSISTED`.
+- **No schema/migration** (the `ContentSource` enum already exists; migrations stay 23, CHECK 46). Living doc:
+  [BULK_IMPORT.md](BULK_IMPORT.md).
+- **Status:** ACCEPTED (implemented Phase 2.2E)
+
 > Bu hujjat D-04'dagi "hali tanlanmagan" ro'yxatini bosqichma-bosqich yopib boradi.
 > Faqat haqiqatan qabul qilingan qarorlar ACCEPTED; product tasdig'ini kutayotganlar bu yerda yozilmaydi ([OPEN_QUESTIONS.md](OPEN_QUESTIONS.md) va [AUTH_ARCHITECTURE.md](AUTH_ARCHITECTURE.md) §23).
 

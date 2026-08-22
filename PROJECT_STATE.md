@@ -6,7 +6,7 @@
 ## Repository pointers (verified 2026-08-22)
 | Repo | Role | Branch | HEAD SHA (at verification) | Working tree |
 |---|---|---|---|---|
-| `zeten-nz/izlan` | code / schema / migrations / tests + `web/` | `phase/2.2E` | `44a0bfb74d7db8854e7c61c103201bf17acf5388` (base `main` `a977c358`, which merged 2.2D) | clean |
+| `zeten-nz/izlan` | code / schema / migrations / tests + `web/` | `phase/2.2E` | `016400c63549ce7237972d4fd5f33b9100745573` (init `44a0bfb` + provenance/pedagogy correction; base `main` `a977c358`, which merged 2.2D) | clean |
 | `zeten-nz/izla-docs` | product/architecture decisions, checkpoints | `phase/2.2E` | `phase/2.2E` (final SHA in PR; base `main` `2bdd590`, which merged 2.2D docs) | clean |
 
 **Phase 2.2D is MERGED / CLOSED** — runtime `main` `a977c35816d5642a93eb071b1ad56d71aba6400d`, docs `main`
@@ -23,20 +23,24 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
 
 ## Current position
 - **Last completed:** Phase **2.2E** — English A1 Pilot Content v1. Result: **TECHNICAL PASS — implementation complete on
-  branch `phase/2.2E` (code `44a0bfb`); PEDAGOGICAL OWNER/METHODIST REVIEW PENDING (not merged)**. The **first real
-  educational content pack**: English → General English → A1 → A1 Foundations, **4 Topics / 12 Lessons / 96 Activities /
-  13 Skills**, teaching language **Uzbek**, target **English**. Content lives in the runtime repo at
+  branch `phase/2.2E` (code `016400c`); PEDAGOGICAL OWNER/METHODIST REVIEW PENDING (not merged)**. The **first real
+  educational content pack**: English → General English → A1 → A1 Foundations, **4 Topics / 12 Lessons / 98 Activities /
+  13 Skills** (~176 min), teaching language **Uzbek**, target **English**. Content lives in the runtime repo at
   `content/pilots/english-a1/v1/` (4 `izlan-topic-content/v1` packages + `manifest.json` + `README.md`) — authoring source
   files that carry server-only answerKey and are **never** delivered to the browser. Markdown + objective activities only
   (no media/speaking/writing/listening/AI). Linear prerequisite chain 001→012; 13 Subject-scoped Skills reused across
-  packages. A `npm run content:pilot:a1:validate` command + PILOT-01..10 unit tests validate the pilot through the
+  packages. A `npm run content:pilot:a1:validate` command + PILOT unit tests validate the pilot through the
   EXISTING importer parser (no second format/parser). A real e2e imports all 12 lessons (4 import audits, DRAFT-only),
   publishes the whole pilot top-down + in prerequisite order via the existing review→publish workflow with **zero
   readiness blockers**, and smoke-tests learner-safe projection (no answerKey leak) + deterministic objective scoring
-  (10000/0, no AI). **No schema change, no migration** (migrations **23**, CHECK **46**); nothing auto-imports into
+  (10000/0, no AI). An **owner-review correction** (`016400c`) added **TD-254** (bulk-import Activity provenance: optional
+  `provenance.source` HUMAN/AI_ASSISTED/AI_GENERATED, omitted→HUMAN, part of documentHash, no schema) so the pilot
+  persists **`AI_ASSISTED`** (not HUMAN) while human review remains required, and fixed the pedagogy (Lesson 06 full
+  0–100/phone digit-reading + both-skill mastery; Lessons 07/08 no longer pre-use have/has; Lesson 12 real objective
+  cumulative retrieval). **No schema change, no migration** (migrations **23**, CHECK **46**); nothing auto-imports into
   dev/prod and publication remains a manual CMS step after human review. The content is an **AI-assisted draft** — not
   pedagogically approved, not CEFR-certified. See [ENGLISH_A1_PILOT.md](ENGLISH_A1_PILOT.md) and
-  [checkpoints/2.2E.md](checkpoints/2.2E.md). No new TD (latest remains TD-253). The learner web app is a 3.x concern.
+  [checkpoints/2.2E.md](checkpoints/2.2E.md). Latest TD is **TD-254** (amends TD-253). The learner web app is a 3.x concern.
 - **Prior:** Phase **2.2D** — Topic-Scoped JSON Bulk Content Import v1. Result: PASS — **MERGED to `main` (`a977c358`)**.
   The first bulk-authoring pipeline: local JSON
   document → strict validation → dry-run plan → human confirmation → **atomic DRAFT import** into an **existing** Topic.
@@ -126,17 +130,17 @@ Baseline below reflects the `phase/2.2B` branch state, OWNER REVIEW PENDING.
 - **Workflow:** the two-repo phase/checkpoint/SHA workflow is adopted (rules in `izlan/CLAUDE.md`).
 - **No future phase is marked complete.** No implementation phase starts until the owner supplies its specific prompt.
 
-## Baseline (phase/2.2E @ `44a0bfb`; izlan `main` `a977c358`)
+## Baseline (phase/2.2E @ `016400c`; izlan `main` `a977c358`)
 | Metric | Value |
 |---|---|
 | migrations | 23 (unchanged; last: `20260822120000_password_credential`, TD-252; 2.2E adds NO schema/migration) |
-| backend unit tests | 499 (2.2E: +11 PILOT-01..10 + aggregate) |
-| backend e2e tests | 594 (2.2E: +5 PILOT-E2E/IMPORT-SAFETY/PUBLISH/LEARNER/SCORING) |
-| backend total tests | **1093** (499 + 594) |
+| backend unit tests | 503 (2.2E: +11 PILOT + aggregate, +4 provenance/PILOT-PROV) |
+| backend e2e tests | 598 (2.2E: +5 PILOT-E2E/IMPORT-SAFETY/PUBLISH/LEARNER/SCORING, +4 IMP-PROV) |
+| backend total tests | **1101** (503 + 598) |
 | web tests (Vitest) | 52 (unchanged in 2.2E) |
 | named CHECK constraints | 46 (unchanged; no schema change) |
 | drift | clean (empty diff / exit 0 on izlan_dev + izlan_test) |
-| pilot content | `content/pilots/english-a1/v1` — 4 packages / 12 lessons / 96 activities / 13 skills; `npm run content:pilot:a1:validate` → VALID |
+| pilot content | `content/pilots/english-a1/v1` — 4 packages / 12 lessons / 98 activities / 13 skills / ~176 min; provenance AI_ASSISTED (TD-254); `npm run content:pilot:a1:validate` → VALID |
 | web app | `izlan/web` — Next.js 15.5.23 · typecheck/lint clean · `next build` ok · `npm ci` reproduces |
 
 ## What is implemented (high level)
